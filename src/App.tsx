@@ -1,13 +1,16 @@
 import { useState, useRef } from "react";
+import { Routes, Route, useNavigate } from "react-router-dom";
 import { COURSE } from "./data/course";
 import { sf } from "./constants";
+import Landing from "./components/Landing";
 import Cover from "./components/Cover";
 import Sidebar from "./components/Sidebar";
 import Header from "./components/Header";
 import Lesson from "./components/Lesson";
 import ChatBot from "./components/ChatBot";
 
-export default function App() {
+function CoursePage() {
+  const navigate = useNavigate();
   const [started, setStarted] = useState(false);
   const [cur, setCur] = useState("intro");
   const [done, setDone] = useState<string[]>([]);
@@ -32,13 +35,13 @@ export default function App() {
   const total = COURSE.reduce((a, m) => a + m.l.length, 0);
   const pct = Math.round((done.length / total) * 100);
 
-  if (!started) return <Cover onStart={() => setStarted(true)} />;
+  if (!started) return <Cover onStart={() => setStarted(true)} onBack={() => navigate("/")} />;
 
   return (
     <div style={{ display: "flex", height: "100vh", background: "#0c0c16", fontFamily: sf, color: "#c0b8a8", overflow: "hidden" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap');
-::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-thumb { background: #222; border-radius: 4px; }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
         @media (max-width: 768px) {
@@ -90,5 +93,14 @@ export default function App() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<Landing />} />
+      <Route path="/curso" element={<CoursePage />} />
+    </Routes>
   );
 }

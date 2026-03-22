@@ -2,6 +2,7 @@ import { hf } from "../constants";
 
 interface Props {
   onStart: () => void;
+  onBack: () => void;
 }
 
 const features = [
@@ -15,7 +16,7 @@ const features = [
   "Técnicas de memorización y errores a evitar",
 ];
 
-export default function Cover({ onStart }: Props) {
+export default function Cover({ onStart, onBack }: Props) {
   return (
     <div style={{ minHeight: "100vh", background: "#0c0c16", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
       <div style={{ maxWidth: 520, textAlign: "center" }}>
@@ -34,12 +35,20 @@ export default function Cover({ onStart }: Props) {
             </div>
           ))}
         </div>
-        <button
-          onClick={onStart}
-          style={{ padding: "14px 40px", borderRadius: 10, border: "none", background: "linear-gradient(135deg,#d4a843,#b8922e)", color: "#0d0d1a", fontSize: 16, fontWeight: 700, cursor: "pointer", fontFamily: hf, letterSpacing: 0.5, marginTop: 16, boxShadow: "0 4px 20px rgba(212,168,67,0.3)" }}
-        >
-          Comenzar el curso
-        </button>
+        <div style={{ display: "flex", gap: 12, justifyContent: "center", marginTop: 16, flexWrap: "wrap" }}>
+          <button
+            onClick={onBack}
+            style={{ padding: "14px 28px", borderRadius: 10, border: "1px solid #333", background: "transparent", color: "#888", fontSize: 15, fontWeight: 600, cursor: "pointer", fontFamily: hf, letterSpacing: 0.5 }}
+          >
+            ← Volver
+          </button>
+          <button
+            onClick={onStart}
+            style={{ padding: "14px 40px", borderRadius: 10, border: "none", background: "linear-gradient(135deg,#d4a843,#b8922e)", color: "#0d0d1a", fontSize: 16, fontWeight: 700, cursor: "pointer", fontFamily: hf, letterSpacing: 0.5, boxShadow: "0 4px 20px rgba(212,168,67,0.3)" }}
+          >
+            Comenzar el curso
+          </button>
+        </div>
         <p style={{ color: "#555", fontSize: 11, marginTop: 16 }}>10 módulos · 31 lecciones · 78 cartas · ~5 horas de contenido</p>
       </div>
     </div>

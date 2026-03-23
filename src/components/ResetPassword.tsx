@@ -90,7 +90,7 @@ export default function ResetPassword() {
                   background: "rgba(201,168,76,0.05)",
                   border: "1px solid rgba(201,168,76,0.3)",
                   borderRadius: 4, padding: "12px 16px",
-                  color: "#f0e6d3", fontSize: 15,
+                  color: "#f0e6d3", fontSize: 16,
                   fontFamily: "Georgia,serif", outline: "none",
                 }}
               />
@@ -109,7 +109,7 @@ export default function ResetPassword() {
                   background: "rgba(201,168,76,0.05)",
                   border: "1px solid rgba(201,168,76,0.3)",
                   borderRadius: 4, padding: "12px 16px",
-                  color: "#f0e6d3", fontSize: 15,
+                  color: "#f0e6d3", fontSize: 16,
                   fontFamily: "Georgia,serif", outline: "none",
                 }}
               />

@@ -105,7 +105,7 @@ export default function Login() {
                 borderRadius: 4,
                 padding: "12px 16px",
                 color: "#f0e6d3",
-                fontSize: 15,
+                fontSize: 16,
                 fontFamily: "Georgia,serif",
                 outline: "none",
               }}
@@ -127,7 +127,7 @@ export default function Login() {
                 borderRadius: 4,
                 padding: "12px 16px",
                 color: "#f0e6d3",
-                fontSize: 15,
+                fontSize: 16,
                 fontFamily: "Georgia,serif",
                 outline: "none",
               }}

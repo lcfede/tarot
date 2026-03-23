@@ -71,7 +71,7 @@ export default function ResetPassword() {
             </p>
           </div>
         ) : !ready ? (
-          <p style={{ textAlign: "center", color: "rgba(201,168,76,0.5)", fontSize: 13, fontStyle: "italic" }}>
+          <p style={{ textAlign: "center", color: "rgba(201,168,76,0.65)", fontSize: 13, fontStyle: "italic" }}>
             Verificando link...
           </p>
         ) : (

@@ -19,7 +19,7 @@ export default function QuizW({ qid, onDone }: Props) {
       <div style={{ textAlign: "center", padding: "24px 0" }}>
         <div style={{ fontSize: 42, marginBottom: 12 }}>{sc >= qs.length * 0.8 ? "🌟" : "✨"}</div>
         <div style={{ fontSize: 40, fontFamily: hf, color: "#c9a84c", marginBottom: 4 }}>{sc}/{qs.length}</div>
-        <div style={{ fontSize: 13, color: "rgba(201,168,76,0.6)", fontFamily: "Georgia,serif", fontStyle: "italic", marginBottom: 24 }}>
+        <div style={{ fontSize: 13, color: "rgba(201,168,76,0.75)", fontFamily: "Georgia,serif", fontStyle: "italic", marginBottom: 24 }}>
           {sc >= qs.length * 0.8 ? "Excelente resultado" : "Podés mejorar — repasa el módulo"}
         </div>
         <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
@@ -28,7 +28,7 @@ export default function QuizW({ qid, onDone }: Props) {
             style={{
               padding: "10px 24px", borderRadius: 4,
               border: "1px solid rgba(201,168,76,0.3)",
-              background: "transparent", color: "rgba(201,168,76,0.6)",
+              background: "transparent", color: "rgba(201,168,76,0.75)",
               fontSize: 11, cursor: "pointer",
               fontFamily: "Georgia,serif", letterSpacing: 2, textTransform: "uppercase",
             }}
@@ -55,7 +55,7 @@ export default function QuizW({ qid, onDone }: Props) {
   const q = qs[idx];
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "rgba(201,168,76,0.5)", letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 16 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "rgba(201,168,76,0.65)", letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 16 }}>
         <span>Pregunta {idx + 1} de {qs.length}</span>
         <span style={{ color: "#c9a84c" }}>{sc} correctas</span>
       </div>

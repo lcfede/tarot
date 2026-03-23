@@ -27,12 +27,12 @@ export default function Sidebar({ cur, done, navOpen, pct, onGo, onCertificate }
         <span style={{ fontSize: 20, color: "#c9a84c", opacity: 0.8 }}>{"✦"}</span>
         <div>
           <div style={{ fontFamily: hf, fontSize: 17, color: "#f0e6d3", fontWeight: 700, letterSpacing: 0.5 }}>Aprende Tarot</div>
-          <div style={{ fontSize: 10, color: "rgba(201,168,76,0.6)", letterSpacing: 1.5, textTransform: "uppercase", marginTop: 1 }}>78 cartas · Curso completo</div>
+          <div style={{ fontSize: 10, color: "rgba(201,168,76,0.75)", letterSpacing: 1.5, textTransform: "uppercase", marginTop: 1 }}>78 cartas · Curso completo</div>
         </div>
       </div>
 
       <div style={{ padding: "4px 8px 14px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "rgba(201,168,76,0.65)", letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 5 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "rgba(201,168,76,0.8)", letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 5 }}>
           <span>Progreso</span><span>{pct}%</span>
         </div>
         <div style={{ height: 2, background: "rgba(201,168,76,0.1)", borderRadius: 2 }}>
@@ -44,7 +44,7 @@ export default function Sidebar({ cur, done, navOpen, pct, onGo, onCertificate }
 
       {COURSE.map((mod, mi) => (
         <div key={mi} style={{ marginBottom: 6 }}>
-          <div style={{ padding: "6px 8px 4px", fontSize: 9, color: "rgba(201,168,76,0.65)", textTransform: "uppercase", letterSpacing: 2 }}>
+          <div style={{ padding: "6px 8px 4px", fontSize: 9, color: "rgba(201,168,76,0.8)", textTransform: "uppercase", letterSpacing: 2 }}>
             {mod.i} {mod.t}
           </div>
           {mod.l.map((l) => {
@@ -60,7 +60,7 @@ export default function Sidebar({ cur, done, navOpen, pct, onGo, onCertificate }
                   padding: "7px 12px", borderRadius: 4,
                   border: isAct ? "1px solid rgba(201,168,76,0.3)" : "1px solid transparent",
                   background: isAct ? "rgba(201,168,76,0.07)" : "transparent",
-                  color: isAct ? "#c9a84c" : isDn ? "rgba(201,168,76,0.45)" : unlocked ? "rgba(240,230,211,0.45)" : "rgba(240,230,211,0.18)",
+                  color: isAct ? "#c9a84c" : isDn ? "rgba(201,168,76,0.6)" : unlocked ? "rgba(240,230,211,0.65)" : "rgba(240,230,211,0.3)",
                   fontSize: 12, cursor: unlocked ? "pointer" : "default", textAlign: "left",
                   transition: "all 0.15s",
                   opacity: unlocked ? 1 : 0.5,

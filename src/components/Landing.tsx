@@ -136,7 +136,7 @@ export default function Landing() {
         {/* Footer */}
         <div>
           <div style={{ width: 160, height: 1, background: "linear-gradient(90deg,transparent,rgba(201,168,76,0.4),transparent)", margin: "0 auto 14px" }} />
-          <div style={{ display: "flex", justifyContent: "center", gap: 20, fontSize: 10, letterSpacing: 2, textTransform: "uppercase", color: "rgba(201,168,76,0.6)" }}>
+          <div style={{ display: "flex", justifyContent: "center", gap: 20, fontSize: 10, letterSpacing: 2, textTransform: "uppercase", color: "rgba(201,168,76,0.75)" }}>
             <span>78 cartas</span>
             <span style={{ opacity: 0.4 }}>|</span>
             <span>10 módulos</span>

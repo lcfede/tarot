@@ -163,13 +163,13 @@ export default function Login() {
         <div style={{ textAlign: "center", marginTop: 24, display: "flex", flexDirection: "column", gap: 10 }}>
           <button
             onClick={() => navigate("/forgot-password")}
-            style={{ background: "none", border: "none", color: "rgba(201,168,76,0.65)", fontSize: 12, cursor: "pointer", fontFamily: "Georgia,serif", letterSpacing: 1 }}
+            style={{ background: "none", border: "none", color: "rgba(201,168,76,0.8)", fontSize: 12, cursor: "pointer", fontFamily: "Georgia,serif", letterSpacing: 1 }}
           >
             ¿Olvidaste tu contraseña?
           </button>
           <button
             onClick={() => navigate("/")}
-            style={{ background: "none", border: "none", color: "rgba(201,168,76,0.55)", fontSize: 11, cursor: "pointer", fontFamily: "Georgia,serif", letterSpacing: 1 }}
+            style={{ background: "none", border: "none", color: "rgba(201,168,76,0.7)", fontSize: 11, cursor: "pointer", fontFamily: "Georgia,serif", letterSpacing: 1 }}
           >
             ← Volver al inicio
           </button>

@@ -53,11 +53,11 @@ export default function Profile() {
 
   const gold = "#c9a84c";
   const goldFaint = "rgba(201,168,76,0.15)";
-  const goldMid = "rgba(201,168,76,0.6)";
+  const goldMid = "rgba(201,168,76,0.75)";
 
   const sectionTitle = (label: string) => (
     <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
-      <div style={{ fontSize: 10, letterSpacing: 3, textTransform: "uppercase" as const, color: goldMid, fontFamily: sf }}>{label}</div>
+      <div style={{ fontSize: 13, letterSpacing: 3, textTransform: "uppercase" as const, color: goldMid, fontFamily: sf }}>{label}</div>
       <div style={{ flex: 1, height: 1, background: `linear-gradient(90deg,${goldFaint},transparent)` }} />
     </div>
   );
@@ -86,7 +86,7 @@ export default function Profile() {
         >
           ← Volver al curso
         </button>
-        <div style={{ fontSize: 10, letterSpacing: 4, textTransform: "uppercase", color: "rgba(201,168,76,0.5)", fontFamily: sf }}>
+        <div style={{ fontSize: 10, letterSpacing: 4, textTransform: "uppercase", color: "rgba(201,168,76,0.65)", fontFamily: sf }}>
           Visión Tarot
         </div>
       </div>
@@ -99,9 +99,9 @@ export default function Profile() {
             ✦
           </div>
           <h1 style={{ fontFamily: hf, fontSize: 28, color: "#f5e6a3", margin: "0 0 6px", fontWeight: 600 }}>Mi Perfil</h1>
-          <div style={{ fontSize: 13, color: "rgba(201,168,76,0.65)" }}>{email}</div>
+          <div style={{ fontSize: 13, color: "rgba(201,168,76,0.8)" }}>{email}</div>
           {startDate && (
-            <div style={{ fontSize: 12, color: "rgba(232,220,200,0.6)", marginTop: 4 }}>Miembro desde el {startDate}</div>
+            <div style={{ fontSize: 12, color: "rgba(232,220,200,0.75)", marginTop: 4 }}>Miembro desde el {startDate}</div>
           )}
         </div>
 
@@ -117,7 +117,7 @@ export default function Profile() {
               <div style={{ width: pct + "%", height: "100%", background: `linear-gradient(90deg,${gold},#f5e6a3)`, borderRadius: 3, transition: "width 0.6s ease" }} />
             </div>
             {isComplete && (
-              <div style={{ marginTop: 14, fontSize: 12, color: gold, letterSpacing: 1, textAlign: "center" }}>
+              <div style={{ marginTop: 14, fontSize: 14, color: gold, letterSpacing: 1, textAlign: "center" }}>
                 Curso completado
               </div>
             )}
@@ -140,14 +140,14 @@ export default function Profile() {
                   borderRadius: 6, padding: "14px 16px",
                 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
-                    <div style={{ fontSize: 9, letterSpacing: 2, textTransform: "uppercase" as const, color: complete ? gold : "rgba(232,220,200,0.5)" }}>
+                    <div style={{ fontSize: 11, letterSpacing: 2, textTransform: "uppercase" as const, color: complete ? gold : "rgba(232,220,200,0.65)" }}>
                       {mod.i}
                     </div>
-                    <div style={{ fontSize: 10, color: complete ? gold : "rgba(232,220,200,0.5)" }}>
+                    <div style={{ fontSize: 13, color: complete ? gold : "rgba(232,220,200,0.65)" }}>
                       {modDone}/{modTotal}
                     </div>
                   </div>
-                  <div style={{ fontSize: 13, color: complete ? "#f0e6d3" : "rgba(232,220,200,0.65)", fontFamily: hf, marginBottom: 10, lineHeight: 1.3 }}>
+                  <div style={{ fontSize: 16, color: complete ? "#f0e6d3" : "rgba(232,220,200,0.8)", fontFamily: hf, marginBottom: 10, lineHeight: 1.3 }}>
                     {mod.t}
                   </div>
                   <div style={{ height: 2, background: "rgba(201,168,76,0.1)", borderRadius: 1 }}>
@@ -165,10 +165,10 @@ export default function Profile() {
           {cert ? (
             <div style={{ background: "rgba(201,168,76,0.06)", border: "1px solid rgba(201,168,76,0.25)", borderRadius: 8, padding: "28px", textAlign: "center" }}>
               <div style={{ fontSize: 32, marginBottom: 12 }}>✦</div>
-              <div style={{ fontSize: 10, letterSpacing: 4, textTransform: "uppercase" as const, color: gold, marginBottom: 8 }}>Certificado emitido</div>
+              <div style={{ fontSize: 12, letterSpacing: 4, textTransform: "uppercase" as const, color: gold, marginBottom: 8 }}>Certificado emitido</div>
               <div style={{ fontFamily: hf, fontSize: 22, color: "#f5e6a3", marginBottom: 6 }}>{cert.full_name}</div>
               <div style={{ width: 60, height: 1, background: `linear-gradient(90deg,transparent,${gold},transparent)`, margin: "0 auto 12px" }} />
-              <div style={{ fontSize: 12, color: "rgba(201,168,76,0.65)", fontStyle: "italic", marginBottom: 24 }}>
+              <div style={{ fontSize: 14, color: "rgba(201,168,76,0.8)", fontStyle: "italic", marginBottom: 24 }}>
                 Emitido el {new Date(cert.issued_at).toLocaleDateString("es-ES", { year: "numeric", month: "long", day: "numeric" })}
               </div>
               <button
@@ -179,7 +179,7 @@ export default function Profile() {
                 style={{
                   padding: "12px 32px", borderRadius: 4, border: `1px solid ${gold}`,
                   background: "linear-gradient(135deg,rgba(201,168,76,0.25),rgba(201,168,76,0.08))",
-                  color: "#f5e6a3", fontSize: 11, cursor: "pointer",
+                  color: "#f5e6a3", fontSize: 13, cursor: "pointer",
                   fontFamily: hf, letterSpacing: 3, textTransform: "uppercase" as const,
                 }}
               >
@@ -188,7 +188,7 @@ export default function Profile() {
             </div>
           ) : isComplete ? (
             <div style={{ background: "rgba(201,168,76,0.04)", border: `1px solid ${goldFaint}`, borderRadius: 8, padding: "28px", textAlign: "center" }}>
-              <div style={{ fontSize: 14, color: "#e8dcc8", fontFamily: hf, marginBottom: 16 }}>
+              <div style={{ fontSize: 16, color: "#e8dcc8", fontFamily: hf, marginBottom: 16 }}>
                 Completaste el curso. Ya podés obtener tu certificado.
               </div>
               <button
@@ -196,7 +196,7 @@ export default function Profile() {
                 style={{
                   padding: "12px 32px", borderRadius: 4, border: `1px solid ${gold}`,
                   background: "linear-gradient(135deg,rgba(201,168,76,0.25),rgba(201,168,76,0.08))",
-                  color: "#f5e6a3", fontSize: 11, cursor: "pointer",
+                  color: "#f5e6a3", fontSize: 13, cursor: "pointer",
                   fontFamily: hf, letterSpacing: 3, textTransform: "uppercase" as const,
                 }}
               >
@@ -205,10 +205,10 @@ export default function Profile() {
             </div>
           ) : (
             <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 8, padding: "28px", textAlign: "center" }}>
-              <div style={{ fontSize: 13, color: "rgba(232,220,200,0.65)", fontFamily: hf, fontStyle: "italic" }}>
+              <div style={{ fontSize: 15, color: "rgba(232,220,200,0.8)", fontFamily: hf, fontStyle: "italic" }}>
                 Completá todas las lecciones para obtener tu certificado.
               </div>
-              <div style={{ marginTop: 16, fontSize: 12, color: "rgba(201,168,76,0.55)" }}>
+              <div style={{ marginTop: 16, fontSize: 14, color: "rgba(201,168,76,0.7)" }}>
                 {total - done.length} {total - done.length === 1 ? "lección restante" : "lecciones restantes"}
               </div>
             </div>

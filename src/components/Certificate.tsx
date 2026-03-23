@@ -69,7 +69,7 @@ export default function Certificate({ userId, onClose }: Props) {
 
   const btnSecondary = {
     padding: "13px 28px", borderRadius: 4, border: "1px solid rgba(201,168,76,0.2)",
-    background: "transparent", color: "rgba(201,168,76,0.65)", fontSize: 11, cursor: "pointer",
+    background: "transparent", color: "rgba(201,168,76,0.8)", fontSize: 11, cursor: "pointer",
     fontFamily: "Georgia,serif", letterSpacing: 2, textTransform: "uppercase" as const,
   };
 
@@ -86,10 +86,10 @@ export default function Certificate({ userId, onClose }: Props) {
         padding: "40px 40px", maxWidth: 480, width: "100%",
         position: "relative", textAlign: "center",
       }}>
-        <button onClick={onClose} style={{ position: "absolute", top: 14, right: 16, background: "none", border: "none", color: "rgba(201,168,76,0.6)", fontSize: 18, cursor: "pointer" }}>✕</button>
+        <button onClick={onClose} style={{ position: "absolute", top: 14, right: 16, background: "none", border: "none", color: "rgba(201,168,76,0.75)", fontSize: 18, cursor: "pointer" }}>✕</button>
 
         {step === "loading" && (
-          <p style={{ color: "rgba(201,168,76,0.65)", fontFamily: "Georgia,serif", fontStyle: "italic" }}>Cargando...</p>
+          <p style={{ color: "rgba(201,168,76,0.8)", fontFamily: "Georgia,serif", fontStyle: "italic" }}>Cargando...</p>
         )}
 
         {step === "idle" && (
@@ -112,7 +112,7 @@ export default function Certificate({ userId, onClose }: Props) {
             <div style={{ fontSize: 11, letterSpacing: 4, textTransform: "uppercase", color: "#c9a84c", marginBottom: 16 }}>Tu certificado</div>
             <h2 style={{ fontFamily: "Georgia,serif", color: "#f5e6a3", fontSize: 22, margin: "0 0 8px" }}>¿Cómo querés que aparezca tu nombre?</h2>
             <div style={{ width: 60, height: 1, background: "linear-gradient(90deg,transparent,#c9a84c,transparent)", margin: "0 auto 16px" }} />
-            <p style={{ color: "rgba(201,168,76,0.6)", fontSize: 13, fontFamily: "Georgia,serif", marginBottom: 24, lineHeight: 1.6 }}>
+            <p style={{ color: "rgba(201,168,76,0.75)", fontSize: 13, fontFamily: "Georgia,serif", marginBottom: 24, lineHeight: 1.6 }}>
               Este nombre quedará impreso en el certificado. Verificá que sea correcto antes de continuar.
             </p>
             <input
@@ -142,7 +142,7 @@ export default function Certificate({ userId, onClose }: Props) {
             <div style={{ padding: "20px", border: "1px solid rgba(201,168,76,0.3)", borderRadius: 4, background: "rgba(201,168,76,0.05)", marginBottom: 20 }}>
               <p style={{ fontFamily: "Georgia,serif", fontSize: 22, color: "#f5e6a3", margin: 0 }}>{fullName}</p>
             </div>
-            <p style={{ color: "rgba(201,168,76,0.65)", fontSize: 12, fontFamily: "Georgia,serif", marginBottom: 24, lineHeight: 1.6, fontStyle: "italic" }}>
+            <p style={{ color: "rgba(201,168,76,0.8)", fontSize: 12, fontFamily: "Georgia,serif", marginBottom: 24, lineHeight: 1.6, fontStyle: "italic" }}>
               Una vez generado el certificado, el nombre no se puede cambiar.
             </p>
             <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
@@ -160,7 +160,7 @@ export default function Certificate({ userId, onClose }: Props) {
             <div style={{ fontSize: 11, letterSpacing: 4, textTransform: "uppercase", color: "#c9a84c", marginBottom: 12 }}>Certificado emitido</div>
             <h2 style={{ fontFamily: "Georgia,serif", color: "#f5e6a3", fontSize: 22, margin: "0 0 12px" }}>{savedName}</h2>
             <div style={{ width: 80, height: 1, background: "linear-gradient(90deg,transparent,#c9a84c,transparent)", margin: "0 auto 16px" }} />
-            <p style={{ color: "rgba(201,168,76,0.6)", fontSize: 12, fontFamily: "Georgia,serif", marginBottom: 28, fontStyle: "italic" }}>
+            <p style={{ color: "rgba(201,168,76,0.75)", fontSize: 12, fontFamily: "Georgia,serif", marginBottom: 28, fontStyle: "italic" }}>
               Emitido el {issuedDate}
             </p>
             <button onClick={() => downloadCertificatePdf(savedName, issuedDate)} style={btnPrimary}>

@@ -72,7 +72,7 @@ export default function Cover({ onStart, onBack }: Props) {
               padding: "12px 28px", borderRadius: 4,
               border: "1px solid rgba(201,168,76,0.2)",
               background: "transparent",
-              color: "rgba(201,168,76,0.5)", fontSize: 12, cursor: "pointer",
+              color: "rgba(201,168,76,0.65)", fontSize: 12, cursor: "pointer",
               fontFamily: "Georgia,serif", letterSpacing: 3, textTransform: "uppercase",
             }}
           >
@@ -96,7 +96,7 @@ export default function Cover({ onStart, onBack }: Props) {
         {/* Footer */}
         <div style={{ marginTop: 32 }}>
           <div style={{ width: 120, height: 1, background: "linear-gradient(90deg,transparent,rgba(201,168,76,0.3),transparent)", margin: "0 auto 12px" }} />
-          <p style={{ color: "rgba(201,168,76,0.4)", fontSize: 9, letterSpacing: 2.5, textTransform: "uppercase", margin: 0 }}>
+          <p style={{ color: "rgba(201,168,76,0.55)", fontSize: 9, letterSpacing: 2.5, textTransform: "uppercase", margin: 0 }}>
             10 módulos · 31 lecciones · 78 cartas
           </p>
         </div>

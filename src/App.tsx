@@ -145,7 +145,7 @@ function CoursePage() {
               style={{ width: 320, minWidth: 320, borderLeft: "1px solid rgba(201,168,76,0.15)", padding: 14, display: "flex", flexDirection: "column", background: "#080612" }}
             >
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
-                <span style={{ fontSize: 12, color: "#c9a84c", fontWeight: 600, letterSpacing: 2, textTransform: "uppercase" }}>{"🔮 Tutor IA"}</span>
+                <span style={{ fontSize: 12, color: "#c9a84c", fontWeight: 600, letterSpacing: 2, textTransform: "uppercase" }}>{"🔮 Oráculo"}</span>
                 <button onClick={() => setChat(false)} style={{ background: "none", border: "none", color: "#555", cursor: "pointer" }}>{"✕"}</button>
               </div>
               <ChatBot />

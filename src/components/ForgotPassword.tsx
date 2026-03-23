@@ -43,7 +43,7 @@ export default function ForgotPassword() {
           <h1 style={{ fontSize: 24, fontWeight: "bold", color: "#f5e6a3", letterSpacing: 2, margin: "0 0 8px" }}>
             Recuperar acceso
           </h1>
-          <p style={{ color: "rgba(201,168,76,0.6)", fontSize: 13, margin: 0, lineHeight: 1.6 }}>
+          <p style={{ color: "rgba(201,168,76,0.75)", fontSize: 13, margin: 0, lineHeight: 1.6 }}>
             Te enviaremos un link para restablecer tu contraseña
           </p>
           <div style={{ width: 60, height: 1, background: "linear-gradient(90deg,transparent,#c9a84c,transparent)", margin: "16px auto 0" }} />
@@ -60,7 +60,7 @@ export default function ForgotPassword() {
               style={{
                 padding: "12px 32px", borderRadius: 4,
                 border: "1px solid rgba(201,168,76,0.3)",
-                background: "transparent", color: "rgba(201,168,76,0.7)",
+                background: "transparent", color: "rgba(201,168,76,0.82)",
                 fontSize: 11, cursor: "pointer", letterSpacing: 3, textTransform: "uppercase",
               }}
             >
@@ -112,7 +112,7 @@ export default function ForgotPassword() {
               onClick={() => navigate("/login")}
               style={{
                 background: "none", border: "none",
-                color: "rgba(201,168,76,0.6)", fontSize: 11,
+                color: "rgba(201,168,76,0.75)", fontSize: 11,
                 cursor: "pointer", letterSpacing: 1, textAlign: "center",
               }}
             >

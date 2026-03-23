@@ -1,10 +1,21 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
+import * as pdfjsLib from "pdfjs-dist";
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
 
 const TOTAL_LESSONS = 31;
 
 const P = "#7c3aed";
 const PL = "#ede9fe";
+
+interface OracleDoc {
+  id: string;
+  title: string;
+  content: string;
+  source_type: string;
+  active: boolean;
+  created_at: string;
+}
 
 interface UserRow {
   id: string;
@@ -28,6 +39,25 @@ const card: React.CSSProperties = {
   borderRadius: 8,
   padding: 24,
 };
+
+const CHUNK_SIZE = 3000;
+
+function splitIntoChunks(text: string): string[] {
+  if (text.length <= CHUNK_SIZE) return [text];
+  const chunks: string[] = [];
+  const paragraphs = text.split(/\n\n+/);
+  let current = "";
+  for (const para of paragraphs) {
+    if (current.length + para.length + 2 > CHUNK_SIZE && current.length > 0) {
+      chunks.push(current.trim());
+      current = para;
+    } else {
+      current += (current ? "\n\n" : "") + para;
+    }
+  }
+  if (current.trim()) chunks.push(current.trim());
+  return chunks;
+}
 
 const fmt = (d: string | null) =>
   d ? new Date(d).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" }) : "—";
@@ -69,7 +99,20 @@ export default function Admin() {
   const [loginError, setLoginError] = useState("");
   const [loginLoading, setLoginLoading] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<"dashboard" | "users">("dashboard");
+  const [tab, setTab] = useState<"dashboard" | "users" | "oraculo">("dashboard");
+  const [oracleDocs, setOracleDocs] = useState<OracleDoc[]>([]);
+  const [oracleLoading, setOracleLoading] = useState(false);
+  const [addForm, setAddForm] = useState({ title: "", content: "", source_type: "text" });
+  const [addLoading, setAddLoading] = useState(false);
+  const [pdfExtracting, setPdfExtracting] = useState(false);
+  const [oracleStats, setOracleStats] = useState<{
+    todayRequests: number; todayTokens: number;
+    monthRequests: number; monthTokens: number;
+    totalRequests: number; totalTokens: number;
+    avgTokens: number;
+    topKeywords: { word: string; count: number }[];
+    recentQuestions: { question: string; created_at: string }[];
+  } | null>(null);
   const [users, setUsers] = useState<UserRow[]>([]);
   const [selected, setSelected] = useState<UserRow | null>(null);
   const [filter, setFilter] = useState<"all" | "active" | "inactive">("all");
@@ -77,6 +120,9 @@ export default function Admin() {
   const [search, setSearch] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
   const [toast, setToast] = useState("");
+  const [deleteAllConfirm, setDeleteAllConfirm] = useState(false);
+  const [allQuestionsOpen, setAllQuestionsOpen] = useState(false);
+  const [kwFilter, setKwFilter] = useState<string | null>(null);
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -93,6 +139,134 @@ export default function Admin() {
     const { data: rows, error } = await supabase.rpc("get_users_admin");
     if (!error && rows) setUsers(rows as UserRow[]);
     setLoading(false);
+  };
+
+  const loadOracleStats = async () => {
+    try {
+      const now = new Date();
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+
+      const [todayRes, monthRes, totalRes] = await Promise.all([
+        supabase.from("oracle_usage").select("total_tokens").gte("created_at", todayStart),
+        supabase.from("oracle_usage").select("total_tokens").gte("created_at", monthStart),
+        supabase.from("oracle_usage").select("total_tokens, question, created_at").order("created_at", { ascending: false }),
+      ]);
+
+      const sum = (rows: { total_tokens: number }[] | null) =>
+        (rows || []).reduce((s, r) => s + r.total_tokens, 0);
+
+      const allRows = totalRes.data || [];
+      const totalTokens = sum(allRows);
+      const totalRequests = allRows.length;
+      const avgTokens = totalRequests > 0 ? Math.round(totalTokens / totalRequests) : 0;
+
+      // Top keywords from all questions
+      const STOP_WORDS = new Set(["para","como","qué","que","una","los","las","del","con","por","cuando","este","esta","sobre","más","mas","tiene","puedo","puede","cual","cuál","son","hay","algo","todo","cómo","donde"]);
+      const wordCount: Record<string, number> = {};
+      allRows.forEach(r => {
+        if (!r.question) return;
+        r.question.toLowerCase().split(/\s+/).forEach((w: string) => {
+          const clean = w.replace(/[^a-záéíóúñü]/gi, "");
+          if (clean.length > 3 && !STOP_WORDS.has(clean)) {
+            wordCount[clean] = (wordCount[clean] || 0) + 1;
+          }
+        });
+      });
+      const topKeywords = Object.entries(wordCount)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 10)
+        .map(([word, count]) => ({ word, count }));
+
+      const recentQuestions = allRows
+        .filter(r => r.question)
+        .map(r => ({ question: r.question as string, created_at: r.created_at as string }));
+
+      setOracleStats({
+        todayRequests: todayRes.data?.length || 0,
+        todayTokens: sum(todayRes.data),
+        monthRequests: monthRes.data?.length || 0,
+        monthTokens: sum(monthRes.data),
+        totalRequests,
+        totalTokens,
+        avgTokens,
+        topKeywords,
+        recentQuestions,
+      });
+    } catch {
+      setOracleStats({ todayRequests: 0, todayTokens: 0, monthRequests: 0, monthTokens: 0, totalRequests: 0, totalTokens: 0, avgTokens: 0, topKeywords: [], recentQuestions: [] });
+    }
+  };
+
+  const loadOracleDocs = async () => {
+    setOracleLoading(true);
+    const { data } = await supabase.from("oracle_docs").select("*").order("created_at", { ascending: false });
+    if (data) setOracleDocs(data as OracleDoc[]);
+    setOracleLoading(false);
+  };
+
+  const addOracleDoc = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!addForm.title.trim() || !addForm.content.trim()) return;
+    setAddLoading(true);
+    const title = addForm.title.trim();
+    const content = addForm.content.trim();
+    const chunks = splitIntoChunks(content);
+    const rows = chunks.map((chunk, i) => ({
+      title: chunks.length > 1 ? `${title} (${i + 1}/${chunks.length})` : title,
+      content: chunk,
+      source_type: addForm.source_type,
+    }));
+    await supabase.from("oracle_docs").insert(rows);
+    setAddForm({ title: "", content: "", source_type: "text" });
+    await loadOracleDocs();
+    setAddLoading(false);
+    showToast(chunks.length > 1 ? `Dividido en ${chunks.length} partes y guardado` : "Contenido agregado al Oráculo");
+  };
+
+  const toggleOracleDoc = async (doc: OracleDoc) => {
+    await supabase.from("oracle_docs").update({ active: !doc.active }).eq("id", doc.id);
+    setOracleDocs(ds => ds.map(d => d.id === doc.id ? { ...d, active: !d.active } : d));
+    showToast(doc.active ? "Documento desactivado" : "Documento activado");
+  };
+
+  const deleteOracleDoc = async (id: string) => {
+    await supabase.from("oracle_docs").delete().eq("id", id);
+    setOracleDocs(ds => ds.filter(d => d.id !== id));
+    showToast("Documento eliminado");
+  };
+
+  const deleteAllOracleDocs = async () => {
+    await supabase.from("oracle_docs").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+    setOracleDocs([]);
+    setDeleteAllConfirm(false);
+    showToast("Base de conocimiento eliminada");
+  };
+
+  const handlePdfUpload = async (file: File) => {
+    setPdfExtracting(true);
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      let fullText = "";
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items
+          .map((item) => ("str" in item ? (item as { str: string }).str : ""))
+          .join(" ");
+        fullText += pageText + "\n\n";
+      }
+      const extracted = fullText.trim();
+      setAddForm(f => ({
+        ...f,
+        content: extracted,
+        title: f.title || file.name.replace(/\.pdf$/i, ""),
+      }));
+    } catch {
+      showToast("No se pudo extraer el texto del PDF. Verificá que no sea un PDF escaneado.");
+    }
+    setPdfExtracting(false);
   };
 
   useEffect(() => {
@@ -206,22 +380,54 @@ export default function Admin() {
 
   return (
     <div style={{ minHeight: "100vh", background: "#f8fafc", fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif", color: "#1e293b" }}>
+      <style>{`
+        .adm-header { padding: 0 32px; }
+        .adm-body { padding: 32px; }
+        .adm-tab { padding: 6px 16px; font-size: 14px; }
+        .adm-kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; }
+        .adm-charts-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+        .adm-oracle-kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+        .adm-oracle-meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .adm-form-row { display: flex; gap: 12px; }
+        .adm-users-layout { display: flex; gap: 24px; align-items: flex-start; }
+        .adm-table-wrap { overflow-x: auto; }
+        .adm-detail { width: 300px; flex-shrink: 0; position: sticky; top: 24px; }
+        @media (max-width: 768px) {
+          .adm-header { padding: 0 14px; }
+          .adm-body { padding: 16px 12px; }
+          .adm-tab { padding: 6px 10px; font-size: 13px; }
+          .adm-kpi-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+          .adm-charts-grid { grid-template-columns: 1fr; }
+          .adm-oracle-kpi-grid { grid-template-columns: repeat(2, 1fr); }
+          .adm-oracle-meta-grid { grid-template-columns: 1fr; }
+          .adm-form-row { flex-direction: column; }
+          .adm-users-layout { flex-direction: column; }
+          .adm-table-wrap { overflow-x: visible; }
+          .adm-detail { width: 100% !important; position: static !important; }
+          .col-md { display: none; }
+          .adm-filters { flex-wrap: nowrap !important; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 4px; scrollbar-width: none; }
+          .adm-filters::-webkit-scrollbar { display: none; }
+          .adm-filters > * { flex-shrink: 0; }
+        }
+        @media (max-width: 540px) { .col-sm { display: none; } }
+        @media (max-width: 390px) { .col-xs { display: none; } }
+      `}</style>
       {/* Header */}
       <div style={{ background: "#fff", borderBottom: "1px solid #e2e8f0" }}>
-        <div style={{ maxWidth: 1280, margin: "0 auto", padding: "0 32px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 56 }}>
+        <div className="adm-header" style={{ maxWidth: 1280, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", height: 56 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <span style={{ fontWeight: 700, fontSize: 15, color: P }}>Admin</span>
             <span style={{ fontSize: 12, color: "#94a3b8" }}>Visión Tarot</span>
           </div>
           <div style={{ display: "flex", gap: 4 }}>
-            {(["dashboard", "users"] as const).map(t => (
-              <button key={t} onClick={() => setTab(t)} style={{
-                padding: "6px 16px", borderRadius: 6, border: "none", cursor: "pointer", fontSize: 14,
+            {(["dashboard", "users", "oraculo"] as const).map(t => (
+              <button key={t} onClick={() => { setTab(t); if (t === "oraculo") { loadOracleDocs(); loadOracleStats(); } }} className="adm-tab" style={{
+                borderRadius: 6, border: "none", cursor: "pointer",
                 background: tab === t ? PL : "transparent",
                 color: tab === t ? P : "#64748b",
                 fontWeight: tab === t ? 600 : 400,
               }}>
-                {t === "dashboard" ? "Dashboard" : "Usuarios"}
+                {t === "dashboard" ? "Dashboard" : t === "users" ? "Usuarios" : "Oráculo"}
               </button>
             ))}
           </div>
@@ -234,6 +440,98 @@ export default function Admin() {
         </div>
       </div>
 
+      {/* Keyword questions modal */}
+      {kwFilter && oracleStats && (() => {
+        const filtered = oracleStats.recentQuestions.filter(q =>
+          q.question.toLowerCase().includes(kwFilter.toLowerCase())
+        );
+        return (
+          <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}
+            onClick={() => setKwFilter(null)}>
+            <div style={{ background: "#fff", borderRadius: 12, padding: "28px 24px", maxWidth: 560, width: "90%", maxHeight: "80vh", display: "flex", flexDirection: "column", boxShadow: "0 8px 40px rgba(0,0,0,0.18)" }}
+              onClick={e => e.stopPropagation()}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                <div style={{ fontWeight: 700, fontSize: 15, color: "#1e293b" }}>
+                  Preguntas con «{kwFilter}»
+                  <span style={{ marginLeft: 8, fontSize: 12, fontWeight: 400, color: "#94a3b8" }}>{filtered.length} resultado{filtered.length !== 1 ? "s" : ""}</span>
+                </div>
+                <button onClick={() => setKwFilter(null)}
+                  style={{ background: "none", border: "1px solid #e2e8f0", borderRadius: 6, padding: "4px 10px", color: "#64748b", fontSize: 13, cursor: "pointer" }}>
+                  Cerrar
+                </button>
+              </div>
+              <div style={{ overflowY: "auto", display: "flex", flexDirection: "column", gap: 6 }}>
+                {filtered.length === 0 ? (
+                  <div style={{ color: "#94a3b8", fontSize: 13, textAlign: "center", padding: 24 }}>Sin resultados.</div>
+                ) : filtered.map((q, i) => (
+                  <div key={i} style={{ fontSize: 13, color: "#374151", background: "#f8fafc", borderRadius: 6, padding: "8px 12px", lineHeight: 1.5 }}>
+                    <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 3 }}>{fmtDt(q.created_at)}</div>
+                    {q.question}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* All questions modal */}
+      {allQuestionsOpen && oracleStats && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}
+          onClick={() => setAllQuestionsOpen(false)}>
+          <div style={{ background: "#fff", borderRadius: 12, padding: "28px 24px", maxWidth: 560, width: "90%", maxHeight: "80vh", display: "flex", flexDirection: "column", boxShadow: "0 8px 40px rgba(0,0,0,0.18)" }}
+            onClick={e => e.stopPropagation()}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+              <div style={{ fontWeight: 700, fontSize: 15, color: "#1e293b" }}>
+                Todas las preguntas
+                <span style={{ marginLeft: 8, fontSize: 12, fontWeight: 400, color: "#94a3b8" }}>{oracleStats.recentQuestions.length} total</span>
+              </div>
+              <button onClick={() => setAllQuestionsOpen(false)}
+                style={{ background: "none", border: "1px solid #e2e8f0", borderRadius: 6, padding: "4px 10px", color: "#64748b", fontSize: 13, cursor: "pointer" }}>
+                Cerrar
+              </button>
+            </div>
+            <div style={{ overflowY: "auto", display: "flex", flexDirection: "column", gap: 6 }}>
+              {oracleStats.recentQuestions.map((q, i) => (
+                <div key={i} style={{ fontSize: 13, color: "#374151", background: "#f8fafc", borderRadius: 6, padding: "8px 12px" }}>
+                  <span style={{ color: "#94a3b8", marginRight: 8, fontSize: 11 }}>{fmtDt(q.created_at)}</span>
+                  {q.question}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete all confirmation modal */}
+      {deleteAllConfirm && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}
+          onClick={() => setDeleteAllConfirm(false)}>
+          <div style={{ background: "#fff", borderRadius: 12, padding: "32px 28px", maxWidth: 420, width: "90%", boxShadow: "0 8px 40px rgba(0,0,0,0.18)" }}
+            onClick={e => e.stopPropagation()}>
+            <div style={{ fontSize: 32, textAlign: "center", marginBottom: 12 }}>⚠️</div>
+            <div style={{ fontWeight: 700, fontSize: 16, color: "#1e293b", textAlign: "center", marginBottom: 8 }}>¿Eliminar toda la base de conocimiento?</div>
+            <div style={{ fontSize: 13, color: "#64748b", textAlign: "center", lineHeight: 1.6, marginBottom: 24 }}>
+              Se van a borrar <strong>{oracleDocs.length} documentos</strong> permanentemente. Esta acción no se puede deshacer.
+            </div>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button
+                onClick={() => setDeleteAllConfirm(false)}
+                style={{ flex: 1, padding: "10px", borderRadius: 6, border: "1px solid #e2e8f0", background: "#fff", color: "#374151", fontSize: 14, cursor: "pointer", fontWeight: 500 }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={deleteAllOracleDocs}
+                style={{ flex: 1, padding: "10px", borderRadius: 6, border: "none", background: "#dc2626", color: "#fff", fontSize: 14, cursor: "pointer", fontWeight: 600 }}
+              >
+                Sí, eliminar todo
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Toast */}
       {toast && (
         <div style={{ position: "fixed", top: 16, right: 16, background: P, color: "#fff", padding: "12px 20px", borderRadius: 8, fontSize: 14, zIndex: 999, boxShadow: "0 4px 16px rgba(124,58,237,0.35)" }}>
@@ -241,14 +539,14 @@ export default function Admin() {
         </div>
       )}
 
-      <div style={{ maxWidth: 1280, margin: "0 auto", padding: "32px 32px" }}>
+      <div className="adm-body" style={{ maxWidth: 1280, margin: "0 auto" }}>
         {loading ? (
           <div style={{ textAlign: "center", padding: 80, color: "#94a3b8", fontSize: 14 }}>Cargando datos...</div>
         ) : tab === "dashboard" ? (
           /* ── DASHBOARD ── */
           <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
             {/* KPI cards */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 16 }}>
+            <div className="adm-kpi-grid">
               {kpis.map(k => (
                 <div key={k.label} style={{ ...card, textAlign: "center" }}>
                   <div style={{ fontSize: 36, fontWeight: 700, color: k.color, lineHeight: 1.1 }}>{k.value}</div>
@@ -258,7 +556,7 @@ export default function Admin() {
             </div>
 
             {/* Charts */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
+            <div className="adm-charts-grid">
               <div style={card}>
                 <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 16, color: "#374151" }}>Dispositivo</div>
                 <BarChart data={deviceData} total={users.length} color={P} />
@@ -273,9 +571,248 @@ export default function Admin() {
               </div>
             </div>
           </div>
+        ) : tab === "oraculo" ? (
+          /* ── ORÁCULO ── */
+          <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+            {/* Usage stats */}
+            <div style={card}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                <div style={{ fontWeight: 700, fontSize: 15, color: "#1e293b" }}>Uso del Oráculo · Groq llama-3.1-8b-instant</div>
+                <div style={{ fontSize: 11, color: "#94a3b8", background: "#f1f5f9", padding: "3px 10px", borderRadius: 100 }}>
+                  Free tier: 30 req/min · 6K tokens/min
+                </div>
+              </div>
+              {oracleStats ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+                  {/* KPI grid */}
+                  {(() => {
+                    const DAILY_LIMIT = 500_000;
+                    const remaining = Math.max(0, DAILY_LIMIT - oracleStats.todayTokens);
+                    const pct = remaining / DAILY_LIMIT;
+                    const tokenColor = pct > 0.3 ? "#16a34a" : pct > 0.1 ? "#d97706" : "#dc2626";
+                    const kpis = [
+                      { label: "Mensajes hoy", value: oracleStats.todayRequests },
+                      { label: "Mensajes este mes", value: oracleStats.monthRequests },
+                      { label: "Mensajes totales", value: oracleStats.totalRequests },
+                      { label: "Tokens promedio/msg", value: oracleStats.avgTokens.toLocaleString() },
+                      { label: "Tokens hoy", value: oracleStats.todayTokens.toLocaleString() },
+                      { label: "Tokens este mes", value: oracleStats.monthTokens.toLocaleString() },
+                      { label: "Tokens totales", value: oracleStats.totalTokens.toLocaleString() },
+                    ];
+                    return (
+                      <div className="adm-oracle-kpi-grid">
+                        {kpis.map(s => (
+                          <div key={s.label} style={{ background: "#f8fafc", borderRadius: 8, padding: "12px 16px" }}>
+                            <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 4, textTransform: "uppercase" as const, letterSpacing: 0.5 }}>{s.label}</div>
+                            <div style={{ fontSize: 20, fontWeight: 700, color: P }}>{s.value}</div>
+                          </div>
+                        ))}
+                        <div style={{ background: "#f8fafc", borderRadius: 8, padding: "12px 16px", border: `1px solid ${tokenColor}22` }}>
+                          <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 4, textTransform: "uppercase" as const, letterSpacing: 0.5 }}>Tokens disponibles hoy</div>
+                          <div style={{ fontSize: 20, fontWeight: 700, color: tokenColor }}>{remaining.toLocaleString()}</div>
+                          <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 3 }}>de 500.000 · {Math.round(pct * 100)}% restante</div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  {/* Top keywords + recent questions */}
+                  {(oracleStats.topKeywords.length > 0 || oracleStats.recentQuestions.length > 0) && (
+                    <div className="adm-oracle-meta-grid">
+                      {/* Top keywords */}
+                      {oracleStats.topKeywords.length > 0 && (
+                        <div>
+                          <div style={{ fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 10 }}>Palabras más consultadas</div>
+                          <div style={{ display: "flex", flexWrap: "wrap" as const, gap: 6 }}>
+                            {oracleStats.topKeywords.map(k => (
+                              <span key={k.word} onClick={() => setKwFilter(k.word)} style={{
+                                padding: "4px 10px", borderRadius: 100, fontSize: 12,
+                                background: PL, color: P, fontWeight: 500,
+                                cursor: "pointer",
+                              }}>
+                                {k.word} <span style={{ opacity: 0.6 }}>({k.count})</span>
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Recent questions */}
+                      {oracleStats.recentQuestions.length > 0 && (
+                        <div>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                            <div style={{ fontSize: 12, fontWeight: 600, color: "#374151" }}>Últimas preguntas</div>
+                            {oracleStats.recentQuestions.length > 5 && (
+                              <button
+                                onClick={() => setAllQuestionsOpen(true)}
+                                style={{ fontSize: 11, color: P, background: "none", border: "none", cursor: "pointer", fontWeight: 500, padding: 0 }}
+                              >
+                                Ver todas ({oracleStats.recentQuestions.length}) →
+                              </button>
+                            )}
+                          </div>
+                          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                            {oracleStats.recentQuestions.slice(0, 5).map((q, i) => (
+                              <div key={i} style={{ fontSize: 12, color: "#374151", background: "#f8fafc", borderRadius: 6, padding: "6px 10px" }}>
+                                <span style={{ color: "#94a3b8", marginRight: 6 }}>{fmt(q.created_at)}</span>
+                                {q.question.length > 80 ? q.question.slice(0, 80) + "..." : q.question}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div style={{ color: "#94a3b8", fontSize: 13 }}>Cargando estadísticas...</div>
+              )}
+            </div>
+            {/* Add form */}
+            <div style={card}>
+              <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 18, color: "#1e293b" }}>Agregar contenido al Oráculo</div>
+              <form onSubmit={addOracleDoc} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                <div className="adm-form-row">
+                  <div style={{ flex: 1 }}>
+                    <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 6 }}>Título</label>
+                    <input
+                      type="text"
+                      value={addForm.title}
+                      onChange={e => setAddForm(f => ({ ...f, title: e.target.value }))}
+                      placeholder="Ej: Arcanos Mayores — significados"
+                      required
+                      style={{ width: "100%", padding: "9px 12px", border: "1px solid #e2e8f0", borderRadius: 6, fontSize: 14, outline: "none", boxSizing: "border-box" as const, color: "#1e293b" }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 6 }}>Tipo</label>
+                    <select
+                      value={addForm.source_type}
+                      onChange={e => setAddForm(f => ({ ...f, source_type: e.target.value, content: "" }))}
+                      style={{ padding: "9px 12px", border: "1px solid #e2e8f0", borderRadius: 6, fontSize: 14, outline: "none", color: "#1e293b", background: "#fff", cursor: "pointer" }}
+                    >
+                      <option value="text">Texto</option>
+                      <option value="pdf">PDF</option>
+                    </select>
+                  </div>
+                </div>
+
+                {addForm.source_type === "pdf" && (
+                  <div>
+                    <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 6 }}>Archivo PDF</label>
+                    <label style={{
+                      display: "flex", alignItems: "center", gap: 10, padding: "10px 16px",
+                      border: "1px dashed #cbd5e1", borderRadius: 6, cursor: pdfExtracting ? "not-allowed" : "pointer",
+                      background: pdfExtracting ? "#f8fafc" : "#fff", color: "#64748b", fontSize: 13,
+                    }}>
+                      <span style={{ fontSize: 18 }}>📄</span>
+                      <span>{pdfExtracting ? "Extrayendo texto..." : addForm.content ? "PDF cargado — podés cambiar el archivo" : "Hacé click para seleccionar un PDF"}</span>
+                      <input
+                        type="file"
+                        accept=".pdf"
+                        disabled={pdfExtracting}
+                        onChange={e => { const f = e.target.files?.[0]; if (f) handlePdfUpload(f); }}
+                        style={{ display: "none" }}
+                      />
+                    </label>
+                    {pdfExtracting && (
+                      <div style={{ fontSize: 12, color: "#7c3aed", marginTop: 6 }}>Leyendo páginas del PDF...</div>
+                    )}
+                  </div>
+                )}
+
+                <div>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 6 }}>
+                    {addForm.source_type === "pdf" ? "Texto extraído (revisá antes de guardar)" : "Contenido"}
+                  </label>
+                  <textarea
+                    value={addForm.content}
+                    onChange={e => setAddForm(f => ({ ...f, content: e.target.value }))}
+                    required
+                    rows={8}
+                    placeholder={addForm.source_type === "pdf" ? "El texto del PDF aparecerá aquí automáticamente..." : "Escribí o pegá el texto que el Oráculo debe conocer..."}
+                    style={{ width: "100%", padding: "10px 12px", border: "1px solid #e2e8f0", borderRadius: 6, fontSize: 13, outline: "none", boxSizing: "border-box" as const, color: "#1e293b", resize: "vertical" as const, fontFamily: "inherit", lineHeight: 1.6 }}
+                  />
+                  {addForm.content && (
+                    <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 4 }}>{addForm.content.length.toLocaleString()} caracteres</div>
+                  )}
+                </div>
+                <button
+                  type="submit"
+                  disabled={addLoading}
+                  style={{ alignSelf: "flex-start", padding: "10px 24px", borderRadius: 6, border: "none", background: P, color: "#fff", fontWeight: 600, fontSize: 14, cursor: addLoading ? "not-allowed" : "pointer", opacity: addLoading ? 0.7 : 1 }}
+                >
+                  {addLoading ? "Guardando..." : "Agregar al Oráculo"}
+                </button>
+              </form>
+            </div>
+
+            {/* Docs list */}
+            <div style={card}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                <div style={{ fontWeight: 700, fontSize: 15, color: "#1e293b" }}>
+                  Base de conocimiento
+                  <span style={{ marginLeft: 8, fontSize: 12, fontWeight: 400, color: "#94a3b8" }}>
+                    {oracleDocs.filter(d => d.active).length} activos · {oracleDocs.length} total
+                  </span>
+                </div>
+                {oracleDocs.length > 0 && (
+                  <button
+                    onClick={() => setDeleteAllConfirm(true)}
+                    style={{ padding: "5px 14px", borderRadius: 6, border: "1px solid #fecaca", background: "#fff", color: "#dc2626", fontSize: 12, cursor: "pointer", fontWeight: 500 }}
+                  >
+                    Eliminar todos
+                  </button>
+                )}
+              </div>
+              {oracleLoading ? (
+                <div style={{ textAlign: "center", padding: 32, color: "#94a3b8", fontSize: 14 }}>Cargando...</div>
+              ) : oracleDocs.length === 0 ? (
+                <div style={{ textAlign: "center", padding: 32, color: "#94a3b8", fontSize: 14 }}>Sin contenido todavía. Agregá el primer documento arriba.</div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  {oracleDocs.map(doc => (
+                    <div key={doc.id} style={{ border: "1px solid #e2e8f0", borderRadius: 8, padding: "14px 16px", background: doc.active ? "#fff" : "#f8fafc", opacity: doc.active ? 1 : 0.6 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                            <span style={{ fontWeight: 600, fontSize: 14, color: "#1e293b" }}>{doc.title}</span>
+                            <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 100, background: "#f1f5f9", color: "#64748b", textTransform: "uppercase" as const, letterSpacing: 0.5 }}>{doc.source_type}</span>
+                            <span style={{ fontSize: 11, color: "#94a3b8" }}>{doc.content.length.toLocaleString()} chars</span>
+                          </div>
+                          <div style={{ fontSize: 12, color: "#94a3b8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>
+                            {doc.content.slice(0, 160)}{doc.content.length > 160 ? "..." : ""}
+                          </div>
+                          <div style={{ fontSize: 11, color: "#cbd5e1", marginTop: 4 }}>{fmt(doc.created_at)}</div>
+                        </div>
+                        <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+                          <button
+                            onClick={() => toggleOracleDoc(doc)}
+                            style={{
+                              padding: "5px 12px", borderRadius: 6, border: "1px solid " + (doc.active ? "#e2e8f0" : "#16a34a"),
+                              background: doc.active ? "#fff" : "#dcfce7", color: doc.active ? "#64748b" : "#16a34a",
+                              fontSize: 12, cursor: "pointer", fontWeight: 500,
+                            }}
+                          >
+                            {doc.active ? "Desactivar" : "Activar"}
+                          </button>
+                          <button
+                            onClick={() => { if (confirm("¿Eliminar este documento?")) deleteOracleDoc(doc.id); }}
+                            style={{ padding: "5px 12px", borderRadius: 6, border: "1px solid #fecaca", background: "#fff", color: "#dc2626", fontSize: 12, cursor: "pointer" }}
+                          >
+                            Eliminar
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
         ) : (
           /* ── USUARIOS ── */
-          <div style={{ display: "flex", gap: 24, alignItems: "flex-start" }}>
+          <div className="adm-users-layout">
             <div style={{ flex: 1, minWidth: 0 }}>
               {/* Search + Filters */}
               <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 16 }}>
@@ -294,7 +831,7 @@ export default function Admin() {
                   )}
                 </div>
                 {/* Pill filters */}
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" as const }}>
+                <div className="adm-filters" style={{ display: "flex", gap: 8, flexWrap: "wrap" as const }}>
                   {([["all", `Todos (${users.length})`], ["active", `Activos (${activeCount})`], ["inactive", `Inactivos (${users.length - activeCount})`]] as const).map(([f, label]) => (
                     <button key={f} onClick={() => setFilter(f)} style={{
                       padding: "5px 14px", borderRadius: 100, fontSize: 12, cursor: "pointer",
@@ -318,12 +855,21 @@ export default function Admin() {
               </div>
 
               {/* Table */}
-              <div style={{ ...card, padding: 0, overflow: "hidden" }}>
+              <div className="adm-table-wrap" style={{ ...card, padding: 0, overflow: "hidden" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                   <thead>
                     <tr style={{ background: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
-                      {["Email", "Registro", "Estado", "Progreso", "Cert.", "Último acceso", "País", "Dispositivo / OS"].map(h => (
-                        <th key={h} style={{ padding: "10px 16px", textAlign: "left", fontWeight: 600, color: "#64748b", fontSize: 11, textTransform: "uppercase", letterSpacing: 0.5, whiteSpace: "nowrap" }}>{h}</th>
+                      {([
+                        ["Email", ""],
+                        ["Registro", "col-sm"],
+                        ["Estado", ""],
+                        ["Progreso", "col-xs"],
+                        ["Cert.", "col-sm"],
+                        ["Último acceso", "col-md"],
+                        ["País", "col-md"],
+                        ["Dispositivo / OS", "col-md"],
+                      ] as [string, string][]).map(([h, cls]) => (
+                        <th key={h} className={cls} style={{ padding: "10px 16px", textAlign: "left", fontWeight: 600, color: "#64748b", fontSize: 11, textTransform: "uppercase", letterSpacing: 0.5, whiteSpace: "nowrap" }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
@@ -334,25 +880,25 @@ export default function Admin() {
                         onClick={() => setSelected(prev => prev?.id === u.id ? null : u)}
                         style={{ borderBottom: "1px solid #f1f5f9", cursor: "pointer", background: selected?.id === u.id ? PL : i % 2 === 0 ? "#fff" : "#fafafa", transition: "background 0.1s" }}
                       >
-                        <td style={{ padding: "10px 16px", fontWeight: 500, maxWidth: 220, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{u.email}</td>
-                        <td style={{ padding: "10px 16px", color: "#64748b", whiteSpace: "nowrap", fontSize: 12 }}>{fmt(u.created_at)}</td>
+                        <td style={{ padding: "10px 16px", fontWeight: 500, maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{u.email}</td>
+                        <td className="col-sm" style={{ padding: "10px 16px", color: "#64748b", whiteSpace: "nowrap", fontSize: 12 }}>{fmt(u.created_at)}</td>
                         <td style={{ padding: "10px 16px" }}>
                           <span style={{ display: "inline-block", padding: "2px 10px", borderRadius: 100, fontSize: 11, fontWeight: 600, background: u.is_active ? "#dcfce7" : "#fee2e2", color: u.is_active ? "#16a34a" : "#dc2626" }}>
                             {u.is_active ? "Activo" : "Inactivo"}
                           </span>
                         </td>
-                        <td style={{ padding: "10px 16px" }}>
+                        <td className="col-xs" style={{ padding: "10px 16px" }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                            <div style={{ width: 64, height: 6, background: "#f1f5f9", borderRadius: 3, flexShrink: 0 }}>
+                            <div style={{ width: 56, height: 6, background: "#f1f5f9", borderRadius: 3, flexShrink: 0 }}>
                               <div style={{ height: "100%", width: `${Math.min(100, (u.progress_count / TOTAL_LESSONS) * 100)}%`, background: P, borderRadius: 3 }} />
                             </div>
                             <span style={{ color: "#64748b", fontSize: 12 }}>{Math.round((u.progress_count / TOTAL_LESSONS) * 100)}%</span>
                           </div>
                         </td>
-                        <td style={{ padding: "10px 16px", textAlign: "center", color: u.has_certificate ? "#16a34a" : "#cbd5e1", fontWeight: 600 }}>{u.has_certificate ? "✓" : "—"}</td>
-                        <td style={{ padding: "10px 16px", color: "#64748b", whiteSpace: "nowrap" }}>{fmt(u.last_sign_in_at)}</td>
-                        <td style={{ padding: "10px 16px", color: "#64748b" }}>{u.last_country || "—"}</td>
-                        <td style={{ padding: "10px 16px", color: "#64748b" }}>{[u.last_device, u.last_os].filter(Boolean).join(" · ") || "—"}</td>
+                        <td className="col-sm" style={{ padding: "10px 16px", textAlign: "center", color: u.has_certificate ? "#16a34a" : "#cbd5e1", fontWeight: 600 }}>{u.has_certificate ? "✓" : "—"}</td>
+                        <td className="col-md" style={{ padding: "10px 16px", color: "#64748b", whiteSpace: "nowrap" }}>{fmt(u.last_sign_in_at)}</td>
+                        <td className="col-md" style={{ padding: "10px 16px", color: "#64748b" }}>{u.last_country || "—"}</td>
+                        <td className="col-md" style={{ padding: "10px 16px", color: "#64748b" }}>{[u.last_device, u.last_os].filter(Boolean).join(" · ") || "—"}</td>
                       </tr>
                     ))}
                     {filteredUsers.length === 0 && (
@@ -365,7 +911,7 @@ export default function Admin() {
 
             {/* Detail panel */}
             {selected && (
-              <div style={{ ...card, width: 300, flexShrink: 0, position: "sticky", top: 24 }}>
+              <div className="adm-detail" style={{ ...card }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
                   <span style={{ fontWeight: 700, fontSize: 14 }}>Detalle usuario</span>
                   <button onClick={() => setSelected(null)} style={{ background: "none", border: "none", color: "#94a3b8", cursor: "pointer", fontSize: 18, lineHeight: 1 }}>✕</button>

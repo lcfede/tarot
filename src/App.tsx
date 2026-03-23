@@ -98,7 +98,10 @@ function CoursePage() {
         ::-webkit-scrollbar-thumb { background: rgba(201,168,76,0.2); border-radius: 4px; }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
         @keyframes lessonEnter { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes dotBounce { 0%, 80%, 100% { transform: translateY(0); opacity: 0.4; } 40% { transform: translateY(-5px); opacity: 1; } }
+        .chat-input { font-size: 14px; }
         @media (max-width: 768px) {
+          .chat-input { font-size: 16px !important; }
           .sidebar { position: fixed !important; left: -280px; top: 0; z-index: 100; transition: left 0.3s; box-shadow: none !important; }
           .sidebar.open { left: 0 !important; box-shadow: 4px 0 30px rgba(0,0,0,0.8) !important; }
           .overlay { display: block !important; }
@@ -142,13 +145,45 @@ function CoursePage() {
           {chat && (
             <div
               className="chatpanel"
-              style={{ width: 320, minWidth: 320, borderLeft: "1px solid rgba(201,168,76,0.15)", padding: 14, display: "flex", flexDirection: "column", background: "#080612" }}
+              style={{ width: 360, minWidth: 360, borderLeft: "1px solid rgba(201,168,76,0.12)", display: "flex", flexDirection: "column", background: "#06040f" }}
             >
-              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
-                <span style={{ fontSize: 12, color: "#c9a84c", fontWeight: 600, letterSpacing: 2, textTransform: "uppercase" }}>{"🔮 Oráculo"}</span>
-                <button onClick={() => setChat(false)} style={{ background: "none", border: "none", color: "#555", cursor: "pointer" }}>{"✕"}</button>
+              {/* Panel header */}
+              <div style={{
+                padding: "14px 16px 12px",
+                borderBottom: "1px solid rgba(201,168,76,0.1)",
+                background: "linear-gradient(180deg,rgba(201,168,76,0.07) 0%,transparent 100%)",
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+                flexShrink: 0,
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <div style={{
+                    width: 38, height: 38, borderRadius: "50%",
+                    background: "radial-gradient(circle,rgba(201,168,76,0.15) 0%,rgba(201,168,76,0.04) 100%)",
+                    border: "1px solid rgba(201,168,76,0.3)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 18, flexShrink: 0,
+                  }}>🔮</div>
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: "#c9a84c", fontFamily: "Georgia,serif", letterSpacing: 0.5 }}>Oráculo</div>
+                    <div style={{ fontSize: 10, color: "rgba(201,168,76,0.45)", letterSpacing: 2, textTransform: "uppercase" }}>Visión Tarot</div>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setChat(false)}
+                  style={{
+                    width: 30, height: 30, borderRadius: 7,
+                    background: "rgba(201,168,76,0.06)",
+                    border: "1px solid rgba(201,168,76,0.15)",
+                    color: "rgba(201,168,76,0.55)", cursor: "pointer",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 13, flexShrink: 0,
+                  }}
+                >✕</button>
               </div>
-              <ChatBot />
+              {/* Chat body */}
+              <div style={{ flex: 1, overflow: "hidden", padding: "14px 14px 16px", display: "flex", flexDirection: "column", minHeight: 0 }}>
+                <ChatBot />
+              </div>
             </div>
           )}
         </div>

@@ -14,6 +14,7 @@ import Header from "./components/Header";
 import Lesson from "./components/Lesson";
 import ChatBot from "./components/ChatBot";
 import Admin from "./components/Admin";
+import Profile from "./components/Profile";
 
 function CoursePage() {
   const navigate = useNavigate();
@@ -127,6 +128,7 @@ function CoursePage() {
           showPulse={!chat && done.length === 0}
           onToggleNav={() => setNavOpen(!navOpen)}
           onToggleChat={() => setChat(!chat)}
+          onProfile={() => navigate("/perfil")}
           onLogout={logout}
         />
 
@@ -168,6 +170,7 @@ export default function App() {
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/curso" element={<CoursePage />} />
       <Route path="/admin" element={<Admin />} />
+      <Route path="/perfil" element={<Profile />} />
     </Routes>
   );
 }

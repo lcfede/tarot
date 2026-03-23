@@ -64,7 +64,7 @@ function W({ title, children, onDone }: { title: string; children: ReactNode; on
     <div ref={ref}>
       <h2 style={{ fontFamily: hf, color: "#f0e6d3", fontSize: 26, margin: "0 0 4px", letterSpacing: 0.5, fontWeight: 700 }}>{title}</h2>
       {mins !== null && (
-        <span style={{ fontSize: 11, color: "rgba(201,168,76,0.45)", letterSpacing: 1, fontFamily: "Georgia,serif" }}>
+        <span style={{ fontSize: 11, color: "rgba(201,168,76,0.6)", letterSpacing: 1, fontFamily: "Georgia,serif" }}>
           {"✦ ~"}{mins} min de lectura
         </span>
       )}

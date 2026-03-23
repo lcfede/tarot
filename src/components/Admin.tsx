@@ -73,6 +73,8 @@ export default function Admin() {
   const [users, setUsers] = useState<UserRow[]>([]);
   const [selected, setSelected] = useState<UserRow | null>(null);
   const [filter, setFilter] = useState<"all" | "active" | "inactive">("all");
+  const [certFilter, setCertFilter] = useState<"all" | "yes" | "no">("all");
+  const [search, setSearch] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
   const [toast, setToast] = useState("");
 
@@ -185,9 +187,14 @@ export default function Admin() {
   const countryAll = count(users.map(u => u.last_country));
   const countryData = Object.fromEntries(Object.entries(countryAll).sort((a, b) => b[1] - a[1]).slice(0, 6));
 
-  const filteredUsers = users.filter(u =>
-    filter === "all" || (filter === "active" && u.is_active) || (filter === "inactive" && !u.is_active)
-  );
+  const filteredUsers = users.filter(u => {
+    if (filter === "active" && !u.is_active) return false;
+    if (filter === "inactive" && u.is_active) return false;
+    if (certFilter === "yes" && !u.has_certificate) return false;
+    if (certFilter === "no" && u.has_certificate) return false;
+    if (search.trim() && !u.email.toLowerCase().includes(search.trim().toLowerCase())) return false;
+    return true;
+  });
 
   const kpis = [
     { label: "Total usuarios", value: users.length, color: P },
@@ -270,19 +277,44 @@ export default function Admin() {
           /* ── USUARIOS ── */
           <div style={{ display: "flex", gap: 24, alignItems: "flex-start" }}>
             <div style={{ flex: 1, minWidth: 0 }}>
-              {/* Filters */}
-              <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
-                {([["all", `Todos (${users.length})`], ["active", `Activos (${activeCount})`], ["inactive", `Inactivos (${users.length - activeCount})`]] as const).map(([f, label]) => (
-                  <button key={f} onClick={() => setFilter(f)} style={{
-                    padding: "6px 16px", borderRadius: 6, fontSize: 13, cursor: "pointer",
-                    border: "1px solid " + (filter === f ? P : "#e2e8f0"),
-                    background: filter === f ? PL : "#fff",
-                    color: filter === f ? P : "#64748b",
-                    fontWeight: filter === f ? 600 : 400,
-                  }}>
-                    {label}
-                  </button>
-                ))}
+              {/* Search + Filters */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 16 }}>
+                {/* Search bar */}
+                <div style={{ position: "relative" }}>
+                  <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#94a3b8", fontSize: 14, pointerEvents: "none" }}>🔍</span>
+                  <input
+                    type="text"
+                    placeholder="Buscar por email..."
+                    value={search}
+                    onChange={e => setSearch(e.target.value)}
+                    style={{ width: "100%", padding: "8px 12px 8px 36px", border: "1px solid #e2e8f0", borderRadius: 6, fontSize: 13, outline: "none", boxSizing: "border-box" as const, color: "#1e293b", background: "#fff" }}
+                  />
+                  {search && (
+                    <button onClick={() => setSearch("")} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "#94a3b8", cursor: "pointer", fontSize: 16, lineHeight: 1 }}>✕</button>
+                  )}
+                </div>
+                {/* Pill filters */}
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" as const }}>
+                  {([["all", `Todos (${users.length})`], ["active", `Activos (${activeCount})`], ["inactive", `Inactivos (${users.length - activeCount})`]] as const).map(([f, label]) => (
+                    <button key={f} onClick={() => setFilter(f)} style={{
+                      padding: "5px 14px", borderRadius: 100, fontSize: 12, cursor: "pointer",
+                      border: "1px solid " + (filter === f ? P : "#e2e8f0"),
+                      background: filter === f ? PL : "#fff",
+                      color: filter === f ? P : "#64748b",
+                      fontWeight: filter === f ? 600 : 400,
+                    }}>{label}</button>
+                  ))}
+                  <div style={{ width: 1, background: "#e2e8f0", margin: "0 2px" }} />
+                  {([["all", "Todos"], ["yes", `Con cert. (${certCount})`], ["no", `Sin cert. (${users.length - certCount})`]] as const).map(([f, label]) => (
+                    <button key={f} onClick={() => setCertFilter(f)} style={{
+                      padding: "5px 14px", borderRadius: 100, fontSize: 12, cursor: "pointer",
+                      border: "1px solid " + (certFilter === f ? "#d97706" : "#e2e8f0"),
+                      background: certFilter === f ? "#fef3c7" : "#fff",
+                      color: certFilter === f ? "#d97706" : "#64748b",
+                      fontWeight: certFilter === f ? 600 : 400,
+                    }}>{label}</button>
+                  ))}
+                </div>
               </div>
 
               {/* Table */}
@@ -290,7 +322,7 @@ export default function Admin() {
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                   <thead>
                     <tr style={{ background: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
-                      {["Email", "Estado", "Progreso", "Cert.", "Último acceso", "País", "Dispositivo / OS"].map(h => (
+                      {["Email", "Registro", "Estado", "Progreso", "Cert.", "Último acceso", "País", "Dispositivo / OS"].map(h => (
                         <th key={h} style={{ padding: "10px 16px", textAlign: "left", fontWeight: 600, color: "#64748b", fontSize: 11, textTransform: "uppercase", letterSpacing: 0.5, whiteSpace: "nowrap" }}>{h}</th>
                       ))}
                     </tr>
@@ -303,6 +335,7 @@ export default function Admin() {
                         style={{ borderBottom: "1px solid #f1f5f9", cursor: "pointer", background: selected?.id === u.id ? PL : i % 2 === 0 ? "#fff" : "#fafafa", transition: "background 0.1s" }}
                       >
                         <td style={{ padding: "10px 16px", fontWeight: 500, maxWidth: 220, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{u.email}</td>
+                        <td style={{ padding: "10px 16px", color: "#64748b", whiteSpace: "nowrap", fontSize: 12 }}>{fmt(u.created_at)}</td>
                         <td style={{ padding: "10px 16px" }}>
                           <span style={{ display: "inline-block", padding: "2px 10px", borderRadius: 100, fontSize: 11, fontWeight: 600, background: u.is_active ? "#dcfce7" : "#fee2e2", color: u.is_active ? "#16a34a" : "#dc2626" }}>
                             {u.is_active ? "Activo" : "Inactivo"}
@@ -323,7 +356,7 @@ export default function Admin() {
                       </tr>
                     ))}
                     {filteredUsers.length === 0 && (
-                      <tr><td colSpan={7} style={{ padding: "40px 16px", textAlign: "center", color: "#94a3b8" }}>Sin usuarios</td></tr>
+                      <tr><td colSpan={8} style={{ padding: "40px 16px", textAlign: "center", color: "#94a3b8" }}>Sin usuarios</td></tr>
                     )}
                   </tbody>
                 </table>

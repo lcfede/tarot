@@ -112,7 +112,7 @@ export default function ForgotPassword() {
               onClick={() => navigate("/login")}
               style={{
                 background: "none", border: "none",
-                color: "rgba(201,168,76,0.35)", fontSize: 11,
+                color: "rgba(201,168,76,0.6)", fontSize: 11,
                 cursor: "pointer", letterSpacing: 1, textAlign: "center",
               }}
             >

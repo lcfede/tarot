@@ -62,7 +62,7 @@ export default function ChatBot() {
           </div>
         ))}
         {ld && (
-          <div style={{ padding: "10px 14px", borderRadius: 4, background: "rgba(201,168,76,0.03)", border: "1px solid rgba(201,168,76,0.12)", color: "rgba(201,168,76,0.4)", fontSize: 12, fontFamily: "Georgia,serif", fontStyle: "italic" }}>
+          <div style={{ padding: "10px 14px", borderRadius: 4, background: "rgba(201,168,76,0.03)", border: "1px solid rgba(201,168,76,0.12)", color: "rgba(201,168,76,0.6)", fontSize: 12, fontFamily: "Georgia,serif", fontStyle: "italic" }}>
             Consultando...
           </div>
         )}

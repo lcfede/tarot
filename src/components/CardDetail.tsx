@@ -13,9 +13,6 @@ export default function CardDetail({ c, onBack }: Props) {
 
   return (
     <div>
-      <button onClick={onBack} style={{ background: "none", border: "none", color: "#d4a843", cursor: "pointer", fontSize: 13, padding: 0, marginBottom: 14 }}>
-        {"← Volver"}
-      </button>
       <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
         <CardImg c={c} w={145} h={238} glow />
         <div style={{ flex: 1, minWidth: 220 }}>
@@ -51,6 +48,16 @@ export default function CardDetail({ c, onBack }: Props) {
             </div>
           )}
         </div>
+      </div>
+      <div style={{ marginTop: 28, paddingTop: 20, borderTop: "1px solid rgba(201,168,76,0.1)" }}>
+        <button onClick={onBack} style={{
+          display: "inline-flex", alignItems: "center", gap: 6,
+          background: "rgba(201,168,76,0.08)", border: "1px solid rgba(201,168,76,0.35)",
+          color: "#c9a84c", cursor: "pointer", fontSize: 12, padding: "9px 22px",
+          borderRadius: 4, letterSpacing: 1, fontFamily: "Georgia,serif",
+        }}>
+          {"← Volver a las cartas"}
+        </button>
       </div>
     </div>
   );

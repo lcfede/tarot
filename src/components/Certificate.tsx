@@ -7,13 +7,14 @@ interface Props {
   onClose: () => void;
 }
 
-function drawCertificate(fullName: string, issuedDate: string): string {
+function drawCertificate(fullName: string, issuedDate: string, scale = 1): string {
   const W = 2480;
   const H = 1754;
   const canvas = document.createElement("canvas");
-  canvas.width = W;
-  canvas.height = H;
+  canvas.width = Math.round(W * scale);
+  canvas.height = Math.round(H * scale);
   const ctx = canvas.getContext("2d")!;
+  if (scale !== 1) ctx.scale(scale, scale);
 
   // Background
   ctx.fillStyle = "#0d0a1e";
@@ -130,7 +131,17 @@ function drawCertificate(fullName: string, issuedDate: string): string {
   // Bottom domain
   text("visiontarot.com", H - 10 < 1680 ? 1650 : H - 80, 26, "rgba(201,168,76,0.35)");
 
-  return canvas.toDataURL("image/jpeg", 0.95);
+  return canvas.toDataURL("image/jpeg", scale < 1 ? 0.75 : 0.95);
+}
+
+function getPdfBase64(name: string, date: string): string {
+  const imgData = drawCertificate(name, date, 0.5);
+  const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+  doc.addImage(imgData, "JPEG", 0, 0, 297, 210);
+  const bytes = new Uint8Array(doc.output("arraybuffer"));
+  let binary = "";
+  bytes.forEach(b => { binary += String.fromCharCode(b); });
+  return btoa(binary);
 }
 
 export default function Certificate({ userId, onClose }: Props) {
@@ -142,7 +153,7 @@ export default function Certificate({ userId, onClose }: Props) {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    supabase.from("certificates").select("full_name,issued_at").eq("user_id", userId).single()
+    supabase.from("certificates").select("full_name,issued_at").eq("user_id", userId).maybeSingle()
       .then(({ data }) => {
         if (data) {
           setSavedName(data.full_name);
@@ -168,6 +179,15 @@ export default function Certificate({ userId, onClose }: Props) {
     setSaving(false);
     download(fullName, date);
     setStep("done");
+    // Send email with PDF (non-blocking)
+    void (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user?.email) return;
+      const pdfBase64 = getPdfBase64(fullName, date);
+      void supabase.functions.invoke("send-certificate", {
+        body: { email: user.email, fullName, issuedDate: date, pdfBase64 },
+      }).then(() => {});
+    })();
   };
 
   const download = (name: string, date: string) => {

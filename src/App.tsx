@@ -133,7 +133,7 @@ function CoursePage() {
         <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
           <div ref={ref} style={{ flex: 1, overflowY: "auto", padding: "24px 5% 50px" }}>
             <div key={cur} style={{ maxWidth: 760, margin: "0 auto", animation: "lessonEnter 0.35s ease both" }}>
-              <Lesson id={cur} onDone={complete} />
+              <Lesson id={cur} onDone={complete} onCertificate={() => setShowCert(true)} />
             </div>
           </div>
 

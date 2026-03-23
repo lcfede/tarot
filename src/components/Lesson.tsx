@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useState, useRef, useEffect, type ReactNode } from "react";
 import type { TarotCard } from "../data/types";
 import { MAJOR, CU, SWD, WND, PNT } from "../data/cards";
 import { hf } from "../constants";
@@ -10,6 +10,7 @@ import SpreadPractice from "./SpreadPractice";
 interface Props {
   id: string;
   onDone: (id: string) => void;
+  onCertificate?: () => void;
 }
 
 /* Shared layout primitives */
@@ -51,10 +52,23 @@ function End({ onDone }: { onDone: () => void }) {
 }
 
 function W({ title, children, onDone }: { title: string; children: ReactNode; onDone: () => void }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [mins, setMins] = useState<number | null>(null);
+  useEffect(() => {
+    if (ref.current) {
+      const words = (ref.current.innerText || "").trim().split(/\s+/).filter(w => w.length > 0).length;
+      setMins(Math.max(1, Math.ceil(words / 200)));
+    }
+  }, []);
   return (
-    <div>
-      <h2 style={{ fontFamily: hf, color: "#f0e6d3", fontSize: 26, margin: "0 0 6px", letterSpacing: 0.5, fontWeight: 700 }}>{title}</h2>
-      <div style={{ width: 160, height: 1, background: "linear-gradient(90deg,#c9a84c,transparent)", marginBottom: 22 }} />
+    <div ref={ref}>
+      <h2 style={{ fontFamily: hf, color: "#f0e6d3", fontSize: 26, margin: "0 0 4px", letterSpacing: 0.5, fontWeight: 700 }}>{title}</h2>
+      {mins !== null && (
+        <span style={{ fontSize: 11, color: "rgba(201,168,76,0.45)", letterSpacing: 1, fontFamily: "Georgia,serif" }}>
+          {"✦ ~"}{mins} min de lectura
+        </span>
+      )}
+      <div style={{ width: 160, height: 1, background: "linear-gradient(90deg,#c9a84c,transparent)", marginTop: 10, marginBottom: 22 }} />
       {children}
       <End onDone={onDone} />
     </div>
@@ -71,7 +85,7 @@ function WQ({ title, children }: { title: string; children: ReactNode }) {
   );
 }
 
-export default function Lesson({ id, onDone }: Props) {
+export default function Lesson({ id, onDone, onCertificate }: Props) {
   const [sel, setSel] = useState<TarotCard | null>(null);
 
   if (sel) return <CardDetail c={sel} onBack={() => setSel(null)} />;
@@ -475,8 +489,24 @@ export default function Lesson({ id, onDone }: Props) {
     );
 
     case "next": return (
-      <W title="Próximos Pasos en Tu Camino" onDone={dn}>
-        <P>{"¡Felicidades! Has completado el curso. Ahora conoces las 78 cartas del tarot Rider-Waite, dominas las 5 tiradas esenciales, sabes interpretar con el Método P.I.C.A. y puedes conectar cartas entre sí para contar historias."}</P>
+      <div>
+        {/* Celebration header */}
+        <div style={{ textAlign: "center", padding: "32px 0 28px", borderBottom: "1px solid rgba(201,168,76,0.15)", marginBottom: 28 }}>
+          <div style={{ fontSize: 44, marginBottom: 14 }}>🌟</div>
+          <div style={{ fontSize: 11, letterSpacing: 4, textTransform: "uppercase", color: "#c9a84c", marginBottom: 10 }}>Curso completado</div>
+          <h2 style={{ fontFamily: hf, color: "#f5e6a3", fontSize: 28, margin: "0 0 12px", fontWeight: 700, letterSpacing: 0.5 }}>
+            ¡Felicitaciones! Completaste el curso
+          </h2>
+          <div style={{ width: 120, height: 1, background: "linear-gradient(90deg,transparent,#c9a84c,transparent)", margin: "0 auto 14px" }} />
+          <p style={{ color: "rgba(232,220,200,0.7)", fontSize: 14, lineHeight: 1.7, maxWidth: 480, margin: "0 auto", fontFamily: "Georgia,serif", fontStyle: "italic" }}>
+            Ahora conocés las 78 cartas del Tarot Rider-Waite, dominás las 5 tiradas esenciales y podés conectar cartas para contar historias.
+          </p>
+        </div>
+
+        {/* Content */}
+        <h2 style={{ fontFamily: hf, color: "#f0e6d3", fontSize: 26, margin: "0 0 6px", letterSpacing: 0.5, fontWeight: 700 }}>Próximos Pasos en Tu Camino</h2>
+        <div style={{ width: 160, height: 1, background: "linear-gradient(90deg,#c9a84c,transparent)", marginBottom: 22 }} />
+
         <P>Eso te pone por delante del 90% de personas que dicen querer aprender tarot pero nunca pasan de hojear un libro. Ahora viene lo importante: la práctica.</P>
         <H>Tu plan para las próximas 4 semanas</H>
         <Li><strong>Semana 1:</strong> Saca una carta del día cada mañana. Obsérvala, interpreta con P.I.C.A., anota en tu diario. Por la noche, reflexiona cómo se manifestó esa energía en tu día.</Li>
@@ -486,11 +516,27 @@ export default function Lesson({ id, onDone }: Props) {
         <H>{"¿Quieres convertir esto en un negocio?"}</H>
         <P>Si te apasiona el tarot y quieres aprender a <strong>cobrar por lecturas, encontrar clientes, dar sesiones profesionales y generar ingresos desde casa</strong>, tenemos la guía completa para ti:</P>
         <Tip>{"\"El Negocio del Tarot: Cómo Ganar Tus Primeros $500 al Mes Leyendo Cartas Desde Casa\" — La guía paso a paso con precios, canales de captación, scripts de venta y plantillas listas para usar. El siguiente nivel para quien quiere vivir de esto."}</Tip>
-        <P>Independientemente de si monetizas o no, el tarot es una herramienta que te acompañará toda la vida. Cada lectura te enseñará algo nuevo sobre ti mismo y sobre las personas que te rodean.</P>
         <p style={{ fontStyle: "italic", color: "#d4a843", marginTop: 20, textAlign: "center", lineHeight: 1.7, fontSize: 14 }}>
           {"Ahora ve, baraja tus cartas, y empieza tu viaje. El Loco ya dio su primer paso — ahora te toca a ti. ✦"}
         </p>
-      </W>
+
+        {/* Certificate button */}
+        <div style={{ marginTop: 32, paddingTop: 20, borderTop: "1px solid rgba(201,168,76,0.12)", textAlign: "center" }}>
+          <p style={{ fontSize: 12, color: "rgba(201,168,76,0.5)", fontFamily: "Georgia,serif", marginBottom: 16, letterSpacing: 1 }}>Tu certificado está listo</p>
+          <button
+            onClick={() => { dn(); onCertificate?.(); }}
+            style={{
+              padding: "13px 36px", borderRadius: 4,
+              border: "1px solid #c9a84c",
+              background: "linear-gradient(135deg,rgba(201,168,76,0.25),rgba(201,168,76,0.08))",
+              color: "#f5e6a3", fontSize: 12, cursor: "pointer",
+              fontFamily: "Georgia,serif", letterSpacing: 3, textTransform: "uppercase",
+            }}
+          >
+            🏆 Descargar Certificado
+          </button>
+        </div>
+      </div>
     );
 
     case "q1": return <WQ title="Test: ¿Qué es el Tarot?"><QuizW qid="q1" onDone={dn} /></WQ>;

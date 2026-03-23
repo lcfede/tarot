@@ -1,8 +1,10 @@
-import { useState, useRef } from "react";
-import { Routes, Route, useNavigate } from "react-router-dom";
+import { useState, useRef, useEffect } from "react";
+import { Routes, Route, useNavigate, Navigate } from "react-router-dom";
 import { COURSE } from "./data/course";
 import { sf } from "./constants";
+import { supabase } from "./lib/supabase";
 import Landing from "./components/Landing";
+import Login from "./components/Login";
 import Cover from "./components/Cover";
 import Sidebar from "./components/Sidebar";
 import Header from "./components/Header";
@@ -11,12 +13,31 @@ import ChatBot from "./components/ChatBot";
 
 function CoursePage() {
   const navigate = useNavigate();
+  const [authed, setAuthed] = useState<boolean | null>(null);
   const [started, setStarted] = useState(false);
   const [cur, setCur] = useState("intro");
   const [done, setDone] = useState<string[]>([]);
   const [chat, setChat] = useState(false);
   const [navOpen, setNavOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setAuthed(!!session);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
+      setAuthed(!!session);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const logout = async () => {
+    await supabase.auth.signOut();
+    navigate("/login");
+  };
+
+  if (authed === null) return null;
+  if (!authed) return <Navigate to="/login" replace />;
 
   const complete = (id: string) => {
     if (!done.includes(id)) setDone((d) => [...d, id]);
@@ -69,6 +90,7 @@ function CoursePage() {
           showPulse={!chat && done.length === 0}
           onToggleNav={() => setNavOpen(!navOpen)}
           onToggleChat={() => setChat(!chat)}
+          onLogout={logout}
         />
 
         <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
@@ -100,6 +122,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={<Landing />} />
+      <Route path="/login" element={<Login />} />
       <Route path="/curso" element={<CoursePage />} />
     </Routes>
   );

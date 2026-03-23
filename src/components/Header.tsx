@@ -7,9 +7,10 @@ interface Props {
   showPulse: boolean;
   onToggleNav: () => void;
   onToggleChat: () => void;
+  onLogout: () => void;
 }
 
-export default function Header({ cur, chatOpen, showPulse, onToggleNav, onToggleChat }: Props) {
+export default function Header({ cur, chatOpen, showPulse, onToggleNav, onToggleChat, onLogout }: Props) {
   const cm = COURSE.find((m) => m.l.some((l) => l.id === cur));
   const cl = cm ? cm.l.find((l) => l.id === cur) : null;
 
@@ -24,15 +25,23 @@ export default function Header({ cur, chatOpen, showPulse, onToggleNav, onToggle
           <div style={{ fontSize: 13, color: "#e0d5c0", fontFamily: hf, fontWeight: 600 }}>{cl ? cl.t : ""}</div>
         </div>
       </div>
-      <button
-        onClick={onToggleChat}
-        style={{ padding: "5px 12px", borderRadius: 16, border: "1px solid #333", background: chatOpen ? "rgba(212,168,67,0.1)" : "transparent", color: chatOpen ? "#d4a843" : "#888", fontSize: 11, cursor: "pointer", position: "relative" }}
-      >
-        {"🔮 Tutor IA"}
-        {showPulse && (
-          <span style={{ position: "absolute", top: -2, right: -2, width: 8, height: 8, borderRadius: "50%", background: "#d4a843", animation: "pulse 2s infinite" }} />
-        )}
-      </button>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <button
+          onClick={onToggleChat}
+          style={{ padding: "5px 12px", borderRadius: 16, border: "1px solid #333", background: chatOpen ? "rgba(212,168,67,0.1)" : "transparent", color: chatOpen ? "#d4a843" : "#888", fontSize: 11, cursor: "pointer", position: "relative" }}
+        >
+          {"🔮 Tutor IA"}
+          {showPulse && (
+            <span style={{ position: "absolute", top: -2, right: -2, width: 8, height: 8, borderRadius: "50%", background: "#d4a843", animation: "pulse 2s infinite" }} />
+          )}
+        </button>
+        <button
+          onClick={onLogout}
+          style={{ padding: "5px 10px", borderRadius: 16, border: "1px solid #222", background: "transparent", color: "#555", fontSize: 11, cursor: "pointer" }}
+        >
+          Salir
+        </button>
+      </div>
     </div>
   );
 }

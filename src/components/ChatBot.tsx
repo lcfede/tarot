@@ -40,28 +40,29 @@ export default function ChatBot() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-      <div ref={ref} style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: 8, marginBottom: 10, paddingRight: 4 }}>
+      <div ref={ref} style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: 8, marginBottom: 12, paddingRight: 4 }}>
         {ms.map((m, i) => (
           <div
             key={i}
             style={{
               alignSelf: m.r === "u" ? "flex-end" : "flex-start",
               maxWidth: "85%",
-              padding: "10px 13px",
-              borderRadius: 10,
-              background: m.r === "u" ? "rgba(212,168,67,0.1)" : "rgba(255,255,255,0.03)",
-              border: "1px solid " + (m.r === "u" ? "rgba(212,168,67,0.2)" : "#222"),
-              color: "#c0b8a8",
+              padding: "10px 14px",
+              borderRadius: 4,
+              background: m.r === "u" ? "rgba(201,168,76,0.08)" : "rgba(201,168,76,0.03)",
+              border: "1px solid " + (m.r === "u" ? "rgba(201,168,76,0.25)" : "rgba(201,168,76,0.12)"),
+              color: "#e8dcc8",
               fontSize: 13,
-              lineHeight: 1.6,
+              lineHeight: 1.65,
               whiteSpace: "pre-wrap",
+              fontFamily: m.r === "u" ? "inherit" : "Georgia,serif",
             }}
           >
             {m.t}
           </div>
         ))}
         {ld && (
-          <div style={{ padding: 10, borderRadius: 10, background: "rgba(255,255,255,0.03)", border: "1px solid #222", color: "#555", fontSize: 12 }}>
+          <div style={{ padding: "10px 14px", borderRadius: 4, background: "rgba(201,168,76,0.03)", border: "1px solid rgba(201,168,76,0.12)", color: "rgba(201,168,76,0.4)", fontSize: 12, fontFamily: "Georgia,serif", fontStyle: "italic" }}>
             Consultando...
           </div>
         )}
@@ -71,13 +72,26 @@ export default function ChatBot() {
           value={inp}
           onChange={(e) => setInp(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter") send(); }}
-          placeholder="Pregunta..."
-          style={{ flex: 1, padding: "10px 12px", borderRadius: 8, border: "1px solid #333", background: "rgba(255,255,255,0.03)", color: "#e0d5c0", fontSize: 13, outline: "none" }}
+          placeholder="Pregunta sobre una carta..."
+          style={{
+            flex: 1, padding: "10px 14px", borderRadius: 4,
+            border: "1px solid rgba(201,168,76,0.2)",
+            background: "rgba(201,168,76,0.04)",
+            color: "#e8dcc8", fontSize: 13, outline: "none",
+            fontFamily: "Georgia,serif",
+          }}
         />
         <button
           onClick={send}
           disabled={ld || !inp.trim()}
-          style={{ padding: "9px 16px", borderRadius: 8, border: "none", background: "#d4a843", color: "#0d0d1a", fontSize: 13, cursor: "pointer", fontWeight: 600, opacity: ld || !inp.trim() ? 0.4 : 1 }}
+          style={{
+            padding: "9px 16px", borderRadius: 4,
+            border: "1px solid rgba(201,168,76,0.4)",
+            background: "rgba(201,168,76,0.12)",
+            color: "#f5e6a3", fontSize: 14, cursor: "pointer",
+            opacity: ld || !inp.trim() ? 0.3 : 1,
+            transition: "opacity 0.2s",
+          }}
         >
           {"→"}
         </button>

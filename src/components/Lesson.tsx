@@ -14,28 +14,37 @@ interface Props {
 
 /* Shared layout primitives */
 const P = ({ children }: { children: ReactNode }) => (
-  <p style={{ color: "#c0b8a8", lineHeight: 1.7, fontSize: 14, margin: "0 0 12px" }}>{children}</p>
+  <p style={{ color: "#e8dcc8", lineHeight: 1.75, fontSize: 14, margin: "0 0 14px" }}>{children}</p>
 );
 const H = ({ children }: { children: ReactNode }) => (
-  <h3 style={{ color: "#d4a843", fontFamily: hf, fontSize: 15, margin: "20px 0 8px" }}>{children}</h3>
+  <h3 style={{ color: "#c9a84c", fontFamily: hf, fontSize: 17, margin: "24px 0 10px", letterSpacing: 0.5 }}>{children}</h3>
 );
 const Li = ({ children }: { children: ReactNode }) => (
-  <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
-    <span style={{ color: "#d4a843", fontSize: 12, marginTop: 3 }}>{"●"}</span>
-    <span style={{ color: "#c0b8a8", lineHeight: 1.6, fontSize: 13 }}>{children}</span>
+  <div style={{ display: "flex", gap: 10, marginBottom: 10 }}>
+    <span style={{ color: "#c9a84c", fontSize: 10, marginTop: 4, flexShrink: 0 }}>{"✦"}</span>
+    <span style={{ color: "#e8dcc8", lineHeight: 1.65, fontSize: 13 }}>{children}</span>
   </div>
 );
 const Tip = ({ children }: { children: ReactNode }) => (
-  <div style={{ padding: 14, borderRadius: 8, background: "rgba(212,168,67,0.04)", border: "1px solid rgba(212,168,67,0.15)", margin: "14px 0" }}>
-    <p style={{ color: "#c0b8a8", lineHeight: 1.6, fontSize: 13, margin: 0 }}>{children}</p>
+  <div style={{ padding: "14px 18px", borderRadius: 4, background: "rgba(201,168,76,0.05)", border: "1px solid rgba(201,168,76,0.2)", borderLeft: "3px solid rgba(201,168,76,0.5)", margin: "18px 0" }}>
+    <p style={{ color: "#e8dcc8", lineHeight: 1.7, fontSize: 13, margin: 0, fontStyle: "italic" }}>{children}</p>
   </div>
 );
 
 function End({ onDone }: { onDone: () => void }) {
   return (
-    <div style={{ marginTop: 24, paddingTop: 16, borderTop: "1px solid #1a1a2e", textAlign: "right" }}>
-      <button onClick={onDone} style={{ padding: "9px 20px", borderRadius: 8, border: "none", background: "#d4a843", color: "#0d0d1a", fontSize: 13, cursor: "pointer", fontWeight: 600 }}>
-        {"Completar ✓"}
+    <div style={{ marginTop: 32, paddingTop: 20, borderTop: "1px solid rgba(201,168,76,0.12)", textAlign: "right" }}>
+      <button
+        onClick={onDone}
+        style={{
+          padding: "10px 28px", borderRadius: 4,
+          border: "1px solid #c9a84c",
+          background: "linear-gradient(135deg,rgba(201,168,76,0.2),rgba(201,168,76,0.08))",
+          color: "#f5e6a3", fontSize: 12, cursor: "pointer",
+          fontFamily: "Georgia,serif", letterSpacing: 3, textTransform: "uppercase",
+        }}
+      >
+        {"Completar ✦"}
       </button>
     </div>
   );
@@ -44,10 +53,20 @@ function End({ onDone }: { onDone: () => void }) {
 function W({ title, children, onDone }: { title: string; children: ReactNode; onDone: () => void }) {
   return (
     <div>
-      <h2 style={{ fontFamily: hf, color: "#e0d5c0", fontSize: 20, margin: "0 0 4px" }}>{title}</h2>
-      <div style={{ width: 45, height: 2, background: "#d4a843", marginBottom: 16 }} />
+      <h2 style={{ fontFamily: hf, color: "#f0e6d3", fontSize: 26, margin: "0 0 6px", letterSpacing: 0.5, fontWeight: 700 }}>{title}</h2>
+      <div style={{ width: 160, height: 1, background: "linear-gradient(90deg,#c9a84c,transparent)", marginBottom: 22 }} />
       {children}
       <End onDone={onDone} />
+    </div>
+  );
+}
+
+function WQ({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <div>
+      <h2 style={{ fontFamily: hf, color: "#f0e6d3", fontSize: 26, margin: "0 0 6px", letterSpacing: 0.5, fontWeight: 700 }}>{title}</h2>
+      <div style={{ width: 160, height: 1, background: "linear-gradient(90deg,#c9a84c,transparent)", marginBottom: 22 }} />
+      {children}
     </div>
   );
 }
@@ -474,10 +493,10 @@ export default function Lesson({ id, onDone }: Props) {
       </W>
     );
 
-    case "q1": return <W title="Test: ¿Qué es el Tarot?" onDone={dn}><QuizW qid="q1" onDone={dn} /></W>;
-    case "q2": return <W title="Test: Estructura" onDone={dn}><QuizW qid="q2" onDone={dn} /></W>;
-    case "q3": return <W title="Test: Arcanos Mayores" onDone={dn}><QuizW qid="q3" onDone={dn} /></W>;
-    case "q4": return <W title="Test: Lectura" onDone={dn}><QuizW qid="q4" onDone={dn} /></W>;
+    case "q1": return <WQ title="Test: ¿Qué es el Tarot?"><QuizW qid="q1" onDone={dn} /></WQ>;
+    case "q2": return <WQ title="Test: Estructura"><QuizW qid="q2" onDone={dn} /></WQ>;
+    case "q3": return <WQ title="Test: Arcanos Mayores"><QuizW qid="q3" onDone={dn} /></WQ>;
+    case "q4": return <WQ title="Test: Lectura"><QuizW qid="q4" onDone={dn} /></WQ>;
 
     default: return <p style={{ color: "#888" }}>{"Lección: " + id}</p>;
   }

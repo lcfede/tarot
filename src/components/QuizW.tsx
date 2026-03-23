@@ -16,15 +16,38 @@ export default function QuizW({ qid, onDone }: Props) {
 
   if (fin) {
     return (
-      <div style={{ textAlign: "center", padding: 24 }}>
-        <div style={{ fontSize: 42 }}>{sc >= qs.length * 0.8 ? "🌟" : "✨"}</div>
-        <div style={{ fontSize: 32, fontFamily: hf, color: "#d4a843", margin: "8px 0" }}>{sc}/{qs.length}</div>
-        <button
-          onClick={() => { setIdx(0); setAns(null); setSc(0); setFin(false); }}
-          style={{ padding: "7px 16px", borderRadius: 8, border: "1px solid #d4a843", background: "rgba(212,168,67,0.08)", color: "#d4a843", cursor: "pointer", marginTop: 8 }}
-        >
-          Reintentar
-        </button>
+      <div style={{ textAlign: "center", padding: "24px 0" }}>
+        <div style={{ fontSize: 42, marginBottom: 12 }}>{sc >= qs.length * 0.8 ? "🌟" : "✨"}</div>
+        <div style={{ fontSize: 40, fontFamily: hf, color: "#c9a84c", marginBottom: 4 }}>{sc}/{qs.length}</div>
+        <div style={{ fontSize: 13, color: "rgba(201,168,76,0.6)", fontFamily: "Georgia,serif", fontStyle: "italic", marginBottom: 24 }}>
+          {sc >= qs.length * 0.8 ? "Excelente resultado" : "Podés mejorar — repasa el módulo"}
+        </div>
+        <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
+          <button
+            onClick={() => { setIdx(0); setAns(null); setSc(0); setFin(false); }}
+            style={{
+              padding: "10px 24px", borderRadius: 4,
+              border: "1px solid rgba(201,168,76,0.3)",
+              background: "transparent", color: "rgba(201,168,76,0.6)",
+              fontSize: 11, cursor: "pointer",
+              fontFamily: "Georgia,serif", letterSpacing: 2, textTransform: "uppercase",
+            }}
+          >
+            Reintentar
+          </button>
+          <button
+            onClick={onDone}
+            style={{
+              padding: "10px 28px", borderRadius: 4,
+              border: "1px solid #c9a84c",
+              background: "linear-gradient(135deg,rgba(201,168,76,0.2),rgba(201,168,76,0.08))",
+              color: "#f5e6a3", fontSize: 11, cursor: "pointer",
+              fontFamily: "Georgia,serif", letterSpacing: 3, textTransform: "uppercase",
+            }}
+          >
+            Continuar ✦
+          </button>
+        </div>
       </div>
     );
   }
@@ -32,23 +55,30 @@ export default function QuizW({ qid, onDone }: Props) {
   const q = qs[idx];
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "#666", marginBottom: 10 }}>
-        <span>{idx + 1}/{qs.length}</span>
-        <span style={{ color: "#d4a843" }}>{sc} ✓</span>
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "rgba(201,168,76,0.5)", letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 16 }}>
+        <span>Pregunta {idx + 1} de {qs.length}</span>
+        <span style={{ color: "#c9a84c" }}>{sc} correctas</span>
       </div>
-      <p style={{ fontSize: 16, lineHeight: 1.5, color: "#e0d5c0", marginBottom: 16, fontFamily: hf }}>{q.q}</p>
-      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      <p style={{ fontSize: 16, lineHeight: 1.65, color: "#f0e6d3", marginBottom: 20, fontFamily: hf, fontWeight: 600 }}>{q.q}</p>
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         {q.o.map((o, j) => {
-          let bg = "rgba(255,255,255,0.03)";
-          let bc = "#333";
-          let tc = "#c0b8a8";
+          let bg = "rgba(201,168,76,0.03)";
+          let bc = "rgba(201,168,76,0.15)";
+          let tc = "#e8dcc8";
           if (ans !== null && j === q.c) { bg = "rgba(45,106,79,0.2)"; bc = "#2d6a4f"; tc = "#90be6d"; }
           if (ans !== null && j === ans && j !== q.c) { bg = "rgba(209,0,0,0.12)"; bc = "#d00000"; tc = "#ff6b6b"; }
           return (
             <button
               key={j}
               onClick={() => { if (ans !== null) return; setAns(j); if (j === q.c) setSc((s) => s + 1); }}
-              style={{ padding: "11px 14px", borderRadius: 8, border: "1px solid " + bc, background: bg, color: tc, fontSize: 14, textAlign: "left", cursor: ans === null ? "pointer" : "default" }}
+              style={{
+                padding: "12px 16px", borderRadius: 4,
+                border: "1px solid " + bc, background: bg, color: tc,
+                fontSize: 14, textAlign: "left",
+                cursor: ans === null ? "pointer" : "default",
+                fontFamily: "Georgia,serif", lineHeight: 1.5,
+                transition: "all 0.15s",
+              }}
             >
               {o}
             </button>
@@ -56,12 +86,21 @@ export default function QuizW({ qid, onDone }: Props) {
         })}
       </div>
       {ans !== null && (
-        <div style={{ textAlign: "right", marginTop: 14 }}>
+        <div style={{ textAlign: "right", marginTop: 20 }}>
           <button
-            onClick={() => { if (idx + 1 >= qs.length) { setFin(true); onDone(); } else { setIdx((n) => n + 1); setAns(null); } }}
-            style={{ padding: "9px 20px", borderRadius: 8, border: "none", background: "#d4a843", color: "#0d0d1a", fontSize: 13, cursor: "pointer", fontWeight: 600 }}
+            onClick={() => {
+              if (idx + 1 >= qs.length) { setFin(true); }
+              else { setIdx((n) => n + 1); setAns(null); }
+            }}
+            style={{
+              padding: "10px 28px", borderRadius: 4,
+              border: "1px solid #c9a84c",
+              background: "linear-gradient(135deg,rgba(201,168,76,0.2),rgba(201,168,76,0.08))",
+              color: "#f5e6a3", fontSize: 11, cursor: "pointer",
+              fontFamily: "Georgia,serif", letterSpacing: 3, textTransform: "uppercase",
+            }}
           >
-            {idx + 1 >= qs.length ? "Resultado" : "Siguiente →"}
+            {idx + 1 >= qs.length ? "Ver resultado" : "Siguiente →"}
           </button>
         </div>
       )}

@@ -13,6 +13,7 @@ import Sidebar from "./components/Sidebar";
 import Header from "./components/Header";
 import Lesson from "./components/Lesson";
 import ChatBot from "./components/ChatBot";
+import Admin from "./components/Admin";
 
 function CoursePage() {
   const navigate = useNavigate();
@@ -166,6 +167,7 @@ export default function App() {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/curso" element={<CoursePage />} />
+      <Route path="/admin" element={<Admin />} />
     </Routes>
   );
 }

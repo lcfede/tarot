@@ -2,6 +2,37 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 
+function parseUA(ua: string) {
+  const mob = /Mobile|Android|iPhone|iPod/.test(ua);
+  const tab = /iPad|Tablet/.test(ua);
+  const device = mob ? "Móvil" : tab ? "Tablet" : "Escritorio";
+  const os = /Windows NT/.test(ua) ? "Windows"
+    : /Mac OS X/.test(ua) && !/iPhone|iPad/.test(ua) ? "macOS"
+    : /iPhone|iPad/.test(ua) ? "iOS"
+    : /Android/.test(ua) ? "Android"
+    : /Linux/.test(ua) ? "Linux" : "Otro";
+  const browser = /Edg\//.test(ua) ? "Edge"
+    : /OPR\//.test(ua) ? "Opera"
+    : /Chrome\//.test(ua) ? "Chrome"
+    : /Firefox\//.test(ua) ? "Firefox"
+    : /Safari\//.test(ua) ? "Safari" : "Otro";
+  return { device, os, browser };
+}
+
+async function logSession(userId: string) {
+  const { device, os, browser } = parseUA(navigator.userAgent);
+  let country = "", city = "";
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 3000);
+    const geo = await fetch("https://ipapi.co/json/", { signal: ctrl.signal }).then(r => r.json());
+    clearTimeout(timer);
+    country = geo.country_name || "";
+    city = geo.city || "";
+  } catch { /* ignore */ }
+  void supabase.from("user_sessions").insert({ user_id: userId, device, os, browser, country, city }).then(() => {});
+}
+
 export default function Login() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
@@ -13,13 +44,23 @@ export default function Login() {
     e.preventDefault();
     setError("");
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    setLoading(false);
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
+      setLoading(false);
       setError("Email o contraseña incorrectos.");
-    } else {
-      navigate("/curso");
+      return;
     }
+    // Check if account is active
+    const { data: profile } = await supabase.from("profiles").select("is_active").eq("user_id", data.user.id).single();
+    if (profile?.is_active === false) {
+      await supabase.auth.signOut();
+      setLoading(false);
+      setError("Tu cuenta ha sido desactivada. Contactá al administrador.");
+      return;
+    }
+    void logSession(data.user.id);
+    setLoading(false);
+    navigate("/curso");
   };
 
   return (

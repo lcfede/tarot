@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import * as pdfjsLib from "pdfjs-dist";
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
@@ -92,14 +93,55 @@ function BarChart({ data, total, color }: { data: Record<string, number>; total:
   );
 }
 
+interface DocGroup {
+  baseTitle: string;
+  chunks: OracleDoc[];
+  totalChars: number;
+  allActive: boolean;
+  source_type: string;
+  created_at: string;
+  isChunked: boolean;
+}
+
+function groupDocs(docs: OracleDoc[]): DocGroup[] {
+  const map = new Map<string, DocGroup>();
+  for (const doc of docs) {
+    const match = doc.title.match(/^(.+) \((\d+)\/\d+\)$/);
+    const baseTitle = match ? match[1] : doc.title;
+    if (!map.has(baseTitle)) {
+      map.set(baseTitle, { baseTitle, chunks: [], totalChars: 0, allActive: true, source_type: doc.source_type, created_at: doc.created_at, isChunked: !!match });
+    }
+    const g = map.get(baseTitle)!;
+    g.chunks.push(doc);
+    g.totalChars += doc.content.length;
+    if (!doc.active) g.allActive = false;
+    if (doc.created_at < g.created_at) g.created_at = doc.created_at;
+    if (match) g.isChunked = true;
+  }
+  for (const g of map.values()) {
+    g.chunks.sort((a, b) => {
+      const ma = a.title.match(/\((\d+)\/\d+\)$/);
+      const mb = b.title.match(/\((\d+)\/\d+\)$/);
+      return ma && mb ? parseInt(ma[1]) - parseInt(mb[1]) : 0;
+    });
+  }
+  return Array.from(map.values());
+}
+
 export default function Admin() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const tab: "dashboard" | "users" | "oraculo" =
+    location.pathname.includes("/users") ? "users"
+    : location.pathname.includes("/oraculo") ? "oraculo"
+    : "dashboard";
+
   const [view, setView] = useState<"loading" | "login" | "panel">("loading");
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [loginError, setLoginError] = useState("");
   const [loginLoading, setLoginLoading] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<"dashboard" | "users" | "oraculo">("dashboard");
   const [oracleDocs, setOracleDocs] = useState<OracleDoc[]>([]);
   const [oracleLoading, setOracleLoading] = useState(false);
   const [addForm, setAddForm] = useState({ title: "", content: "", source_type: "text" });
@@ -123,6 +165,7 @@ export default function Admin() {
   const [deleteAllConfirm, setDeleteAllConfirm] = useState(false);
   const [allQuestionsOpen, setAllQuestionsOpen] = useState(false);
   const [kwFilter, setKwFilter] = useState<string | null>(null);
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -224,23 +267,26 @@ export default function Admin() {
     showToast(chunks.length > 1 ? `Dividido en ${chunks.length} partes y guardado` : "Contenido agregado al Oráculo");
   };
 
-  const toggleOracleDoc = async (doc: OracleDoc) => {
-    await supabase.from("oracle_docs").update({ active: !doc.active }).eq("id", doc.id);
-    setOracleDocs(ds => ds.map(d => d.id === doc.id ? { ...d, active: !d.active } : d));
-    showToast(doc.active ? "Documento desactivado" : "Documento activado");
-  };
-
-  const deleteOracleDoc = async (id: string) => {
-    await supabase.from("oracle_docs").delete().eq("id", id);
-    setOracleDocs(ds => ds.filter(d => d.id !== id));
-    showToast("Documento eliminado");
-  };
-
   const deleteAllOracleDocs = async () => {
     await supabase.from("oracle_docs").delete().neq("id", "00000000-0000-0000-0000-000000000000");
     setOracleDocs([]);
     setDeleteAllConfirm(false);
     showToast("Base de conocimiento eliminada");
+  };
+
+  const toggleOracleGroup = async (group: DocGroup) => {
+    const newActive = !group.allActive;
+    const ids = group.chunks.map(c => c.id);
+    await supabase.from("oracle_docs").update({ active: newActive }).in("id", ids);
+    setOracleDocs(ds => ds.map(d => ids.includes(d.id) ? { ...d, active: newActive } : d));
+    showToast(newActive ? "Documento activado" : "Documento desactivado");
+  };
+
+  const deleteOracleGroup = async (group: DocGroup) => {
+    const ids = group.chunks.map(c => c.id);
+    await supabase.from("oracle_docs").delete().in("id", ids);
+    setOracleDocs(ds => ds.filter(d => !ids.includes(d.id)));
+    showToast("Documento eliminado");
   };
 
   const handlePdfUpload = async (file: File) => {
@@ -278,6 +324,13 @@ export default function Admin() {
       loadUsers();
     });
   }, []);
+
+  useEffect(() => {
+    if (view === "panel" && tab === "oraculo") {
+      loadOracleDocs();
+      loadOracleStats();
+    }
+  }, [tab, view]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -330,12 +383,12 @@ export default function Admin() {
           <div>
             <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 6 }}>Email</label>
             <input type="email" value={loginEmail} onChange={e => setLoginEmail(e.target.value)} required
-              style={{ width: "100%", padding: "10px 12px", border: "1px solid #e2e8f0", borderRadius: 6, fontSize: 14, outline: "none", boxSizing: "border-box" as const, color: "#1e293b" }} />
+              style={{ width: "100%", padding: "10px 12px", border: "1px solid #e2e8f0", borderRadius: 6, fontSize: 16, outline: "none", boxSizing: "border-box" as const, color: "#1e293b" }} />
           </div>
           <div>
             <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 6 }}>Contraseña</label>
             <input type="password" value={loginPassword} onChange={e => setLoginPassword(e.target.value)} required
-              style={{ width: "100%", padding: "10px 12px", border: "1px solid #e2e8f0", borderRadius: 6, fontSize: 14, outline: "none", boxSizing: "border-box" as const, color: "#1e293b" }} />
+              style={{ width: "100%", padding: "10px 12px", border: "1px solid #e2e8f0", borderRadius: 6, fontSize: 16, outline: "none", boxSizing: "border-box" as const, color: "#1e293b" }} />
           </div>
           {loginError && <div style={{ fontSize: 13, color: "#dc2626", textAlign: "center" }}>{loginError}</div>}
           <button type="submit" disabled={loginLoading}
@@ -393,6 +446,7 @@ export default function Admin() {
         .adm-table-wrap { overflow-x: auto; }
         .adm-detail { width: 300px; flex-shrink: 0; position: sticky; top: 24px; }
         @media (max-width: 768px) {
+          input, textarea, select { font-size: 16px !important; }
           .adm-header { padding: 0 14px; }
           .adm-body { padding: 16px 12px; }
           .adm-tab { padding: 6px 10px; font-size: 13px; }
@@ -421,7 +475,7 @@ export default function Admin() {
           </div>
           <div style={{ display: "flex", gap: 4 }}>
             {(["dashboard", "users", "oraculo"] as const).map(t => (
-              <button key={t} onClick={() => { setTab(t); if (t === "oraculo") { loadOracleDocs(); loadOracleStats(); } }} className="adm-tab" style={{
+              <button key={t} onClick={() => navigate("/admin/" + t)} className="adm-tab" style={{
                 borderRadius: 6, border: "none", cursor: "pointer",
                 background: tab === t ? PL : "transparent",
                 color: tab === t ? P : "#64748b",
@@ -432,7 +486,7 @@ export default function Admin() {
             ))}
           </div>
           <button
-            onClick={() => { void supabase.auth.signOut().then(() => setView("login")); }}
+            onClick={() => { void supabase.auth.signOut().then(() => navigate("/admin/dashboard")); }}
             style={{ background: "none", border: "1px solid #e2e8f0", borderRadius: 6, padding: "6px 14px", color: "#64748b", fontSize: 13, cursor: "pointer" }}
           >
             Salir
@@ -771,41 +825,78 @@ export default function Admin() {
                 <div style={{ textAlign: "center", padding: 32, color: "#94a3b8", fontSize: 14 }}>Sin contenido todavía. Agregá el primer documento arriba.</div>
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                  {oracleDocs.map(doc => (
-                    <div key={doc.id} style={{ border: "1px solid #e2e8f0", borderRadius: 8, padding: "14px 16px", background: doc.active ? "#fff" : "#f8fafc", opacity: doc.active ? 1 : 0.6 }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                            <span style={{ fontWeight: 600, fontSize: 14, color: "#1e293b" }}>{doc.title}</span>
-                            <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 100, background: "#f1f5f9", color: "#64748b", textTransform: "uppercase" as const, letterSpacing: 0.5 }}>{doc.source_type}</span>
-                            <span style={{ fontSize: 11, color: "#94a3b8" }}>{doc.content.length.toLocaleString()} chars</span>
+                  {groupDocs(oracleDocs).map(group => {
+                    const isExpanded = expandedGroups.has(group.baseTitle);
+                    return (
+                      <div key={group.baseTitle} style={{ border: "1px solid #e2e8f0", borderRadius: 8, overflow: "hidden", background: group.allActive ? "#fff" : "#f8fafc", opacity: group.allActive ? 1 : 0.65 }}>
+                        {/* Group header */}
+                        <div style={{ padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4, flexWrap: "wrap" as const }}>
+                              <span style={{ fontWeight: 600, fontSize: 14, color: "#1e293b" }}>{group.baseTitle}</span>
+                              <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 100, background: "#f1f5f9", color: "#64748b", textTransform: "uppercase" as const, letterSpacing: 0.5 }}>{group.source_type}</span>
+                              {group.isChunked && (
+                                <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 100, background: PL, color: P, fontWeight: 600 }}>
+                                  {group.chunks.length} partes
+                                </span>
+                              )}
+                              <span style={{ fontSize: 11, color: "#94a3b8" }}>{group.totalChars.toLocaleString()} chars</span>
+                            </div>
+                            <div style={{ fontSize: 11, color: "#cbd5e1" }}>{fmt(group.created_at)}</div>
                           </div>
-                          <div style={{ fontSize: 12, color: "#94a3b8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>
-                            {doc.content.slice(0, 160)}{doc.content.length > 160 ? "..." : ""}
+                          <div style={{ display: "flex", gap: 8, flexShrink: 0, alignItems: "center", flexWrap: "wrap" as const }}>
+                            {group.isChunked && (
+                              <button
+                                onClick={() => setExpandedGroups(prev => {
+                                  const next = new Set(prev);
+                                  if (next.has(group.baseTitle)) next.delete(group.baseTitle);
+                                  else next.add(group.baseTitle);
+                                  return next;
+                                })}
+                                style={{ padding: "5px 10px", borderRadius: 6, border: "1px solid #e2e8f0", background: "#fff", color: "#64748b", fontSize: 12, cursor: "pointer" }}
+                              >
+                                {isExpanded ? "▲ Ocultar" : "▼ Ver partes"}
+                              </button>
+                            )}
+                            <button
+                              onClick={() => toggleOracleGroup(group)}
+                              style={{
+                                padding: "5px 12px", borderRadius: 6,
+                                border: "1px solid " + (group.allActive ? "#e2e8f0" : "#16a34a"),
+                                background: group.allActive ? "#fff" : "#dcfce7",
+                                color: group.allActive ? "#64748b" : "#16a34a",
+                                fontSize: 12, cursor: "pointer", fontWeight: 500,
+                              }}
+                            >
+                              {group.allActive ? "Desactivar" : "Activar"}
+                            </button>
+                            <button
+                              onClick={() => { if (confirm(`¿Eliminar "${group.baseTitle}"${group.isChunked ? ` y sus ${group.chunks.length} partes` : ""}?`)) void deleteOracleGroup(group); }}
+                              style={{ padding: "5px 12px", borderRadius: 6, border: "1px solid #fecaca", background: "#fff", color: "#dc2626", fontSize: 12, cursor: "pointer" }}
+                            >
+                              Eliminar
+                            </button>
                           </div>
-                          <div style={{ fontSize: 11, color: "#cbd5e1", marginTop: 4 }}>{fmt(doc.created_at)}</div>
                         </div>
-                        <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
-                          <button
-                            onClick={() => toggleOracleDoc(doc)}
-                            style={{
-                              padding: "5px 12px", borderRadius: 6, border: "1px solid " + (doc.active ? "#e2e8f0" : "#16a34a"),
-                              background: doc.active ? "#fff" : "#dcfce7", color: doc.active ? "#64748b" : "#16a34a",
-                              fontSize: 12, cursor: "pointer", fontWeight: 500,
-                            }}
-                          >
-                            {doc.active ? "Desactivar" : "Activar"}
-                          </button>
-                          <button
-                            onClick={() => { if (confirm("¿Eliminar este documento?")) deleteOracleDoc(doc.id); }}
-                            style={{ padding: "5px 12px", borderRadius: 6, border: "1px solid #fecaca", background: "#fff", color: "#dc2626", fontSize: 12, cursor: "pointer" }}
-                          >
-                            Eliminar
-                          </button>
-                        </div>
+                        {/* Chunks expandable */}
+                        {group.isChunked && isExpanded && (
+                          <div style={{ borderTop: "1px solid #f1f5f9", background: "#f8fafc", padding: "8px 16px 12px", display: "flex", flexDirection: "column", gap: 6 }}>
+                            {group.chunks.map((chunk, ci) => (
+                              <div key={chunk.id} style={{ display: "flex", gap: 8, alignItems: "flex-start", fontSize: 12, color: "#64748b" }}>
+                                <span style={{ flexShrink: 0, fontWeight: 600, color: "#94a3b8", minWidth: 20 }}>{ci + 1}.</span>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <span style={{ color: "#374151", fontWeight: 500 }}>{chunk.content.length.toLocaleString()} chars</span>
+                                  <span style={{ color: "#cbd5e1", marginLeft: 8 }}>
+                                    {chunk.content.slice(0, 100)}{chunk.content.length > 100 ? "..." : ""}
+                                  </span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>

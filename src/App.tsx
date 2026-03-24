@@ -204,7 +204,8 @@ export default function App() {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/curso" element={<CoursePage />} />
-      <Route path="/admin" element={<Admin />} />
+      <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+      <Route path="/admin/*" element={<Admin />} />
       <Route path="/perfil" element={<Profile />} />
     </Routes>
   );

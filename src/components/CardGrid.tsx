@@ -6,14 +6,37 @@ interface Props {
   onPick: (c: TarotCard) => void;
 }
 
+const CARD_W = 95;
+const CARD_H = 156;
+
+function desktopCols(n: number): number {
+  if (n === 14) return 7;
+  return 4; // major arcana sections (7 or 8 cards)
+}
+
 export default function CardGrid({ cards, onPick }: Props) {
+  const cols = desktopCols(cards.length);
   return (
     <div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(85px,1fr))", gap: 10, justifyItems: "center", margin: "16px 0" }}>
+      <style>{`
+        .cg-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(${CARD_W}px, 1fr));
+          gap: 12px;
+          justify-items: center;
+          margin: 16px 0;
+        }
+        @media (min-width: 769px) {
+          .cg-grid {
+            grid-template-columns: repeat(var(--cg-cols), 1fr);
+          }
+        }
+      `}</style>
+      <div className="cg-grid" style={{ "--cg-cols": cols } as React.CSSProperties}>
         {cards.map((c, i) => (
           <div key={i} style={{ textAlign: "center", cursor: "pointer" }} onClick={() => onPick(c)}>
-            <CardImg c={c} w={85} h={140} />
-            <div style={{ fontSize: 10, color: "#888", marginTop: 3 }}>{c.nm}</div>
+            <CardImg c={c} w={CARD_W} h={CARD_H} />
+            <div style={{ fontSize: 12, color: "#888", marginTop: 4 }}>{c.nm}</div>
           </div>
         ))}
       </div>

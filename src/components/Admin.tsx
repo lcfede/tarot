@@ -154,6 +154,8 @@ export default function Admin() {
     avgTokens: number;
     topKeywords: { word: string; count: number }[];
     recentQuestions: { question: string; created_at: string }[];
+    userUsage: { userId: string; tokens: number; messages: number }[];
+    adminUserIds: string[];
   } | null>(null);
   const [users, setUsers] = useState<UserRow[]>([]);
   const [selected, setSelected] = useState<UserRow | null>(null);
@@ -166,6 +168,8 @@ export default function Admin() {
   const [allQuestionsOpen, setAllQuestionsOpen] = useState(false);
   const [kwFilter, setKwFilter] = useState<string | null>(null);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const [userUsagePage, setUserUsagePage] = useState(0);
+  const [oracleTab, setOracleTab] = useState<"stats" | "contenido">("stats");
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -190,11 +194,14 @@ export default function Admin() {
       const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
 
-      const [todayRes, monthRes, totalRes] = await Promise.all([
+      const [todayRes, monthRes, totalRes, userUsageRes, adminUsersRes] = await Promise.all([
         supabase.from("oracle_usage").select("total_tokens").gte("created_at", todayStart),
         supabase.from("oracle_usage").select("total_tokens").gte("created_at", monthStart),
         supabase.from("oracle_usage").select("total_tokens, question, created_at").order("created_at", { ascending: false }),
+        supabase.from("oracle_usage").select("user_id, total_tokens").gte("created_at", todayStart).not("user_id", "is", null),
+        supabase.from("admin_users").select("user_id"),
       ]);
+      const adminUserIds = (adminUsersRes.data || []).map((r: { user_id: string }) => r.user_id);
 
       const sum = (rows: { total_tokens: number }[] | null) =>
         (rows || []).reduce((s, r) => s + r.total_tokens, 0);
@@ -225,6 +232,17 @@ export default function Admin() {
         .filter(r => r.question)
         .map(r => ({ question: r.question as string, created_at: r.created_at as string }));
 
+      // Per-user today usage
+      const userUsageMap: Record<string, { tokens: number; messages: number }> = {};
+      ((userUsageRes.data || []) as { user_id: string; total_tokens: number }[]).forEach(r => {
+        if (!userUsageMap[r.user_id]) userUsageMap[r.user_id] = { tokens: 0, messages: 0 };
+        userUsageMap[r.user_id].tokens += r.total_tokens;
+        userUsageMap[r.user_id].messages += 1;
+      });
+      const userUsage = Object.entries(userUsageMap)
+        .map(([userId, v]) => ({ userId, ...v }))
+        .sort((a, b) => b.tokens - a.tokens);
+
       setOracleStats({
         todayRequests: todayRes.data?.length || 0,
         todayTokens: sum(todayRes.data),
@@ -235,9 +253,11 @@ export default function Admin() {
         avgTokens,
         topKeywords,
         recentQuestions,
+        userUsage,
+        adminUserIds,
       });
     } catch {
-      setOracleStats({ todayRequests: 0, todayTokens: 0, monthRequests: 0, monthTokens: 0, totalRequests: 0, totalTokens: 0, avgTokens: 0, topKeywords: [], recentQuestions: [] });
+      setOracleStats({ todayRequests: 0, todayTokens: 0, monthRequests: 0, monthTokens: 0, totalRequests: 0, totalTokens: 0, avgTokens: 0, topKeywords: [], recentQuestions: [], userUsage: [], adminUserIds: [] });
     }
   };
 
@@ -628,61 +648,158 @@ export default function Admin() {
         ) : tab === "oraculo" ? (
           /* ── ORÁCULO ── */
           <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-            {/* Usage stats */}
-            <div style={card}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-                <div style={{ fontWeight: 700, fontSize: 15, color: "#1e293b" }}>Uso del Oráculo · Groq llama-3.1-8b-instant</div>
-                <div style={{ fontSize: 11, color: "#94a3b8", background: "#f1f5f9", padding: "3px 10px", borderRadius: 100 }}>
-                  Free tier: 30 req/min · 6K tokens/min
-                </div>
-              </div>
-              {oracleStats ? (
-                <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-                  {/* KPI grid */}
+            {/* Oracle sub-tabs */}
+            <div style={{ display: "flex", gap: 2, background: "#f1f5f9", borderRadius: 8, padding: 4, alignSelf: "flex-start" }}>
+              {([["stats", "Estadísticas"], ["contenido", "Base de conocimiento"]] as const).map(([t, label]) => (
+                <button key={t} onClick={() => setOracleTab(t)} style={{
+                  padding: "7px 18px", borderRadius: 6, border: "none", cursor: "pointer", fontSize: 13,
+                  background: oracleTab === t ? "#fff" : "transparent",
+                  color: oracleTab === t ? "#1e293b" : "#64748b",
+                  fontWeight: oracleTab === t ? 600 : 400,
+                  boxShadow: oracleTab === t ? "0 1px 3px rgba(0,0,0,0.08)" : "none",
+                  transition: "all 0.15s",
+                }}>{label}</button>
+              ))}
+            </div>
+
+            {oracleTab === "stats" ? (
+              /* ── ESTADÍSTICAS ── */
+              oracleStats ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+
+                  {/* KPIs */}
+                  <div style={card}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
+                      <div>
+                        <div style={{ fontWeight: 700, fontSize: 15, color: "#1e293b" }}>Uso del Oráculo · Groq llama-3.1-8b-instant</div>
+                        <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 3 }}>Free tier: 30 req/min · 6K tokens/min · 500K tokens/día</div>
+                      </div>
+                    </div>
+                    {(() => {
+                      const DAILY_LIMIT = 500_000;
+                      const remaining = Math.max(0, DAILY_LIMIT - oracleStats.todayTokens);
+                      const pct = remaining / DAILY_LIMIT;
+                      const tokenColor = pct > 0.3 ? "#16a34a" : pct > 0.1 ? "#d97706" : "#dc2626";
+                      const kpis = [
+                        { label: "Mensajes hoy", value: oracleStats.todayRequests },
+                        { label: "Mensajes este mes", value: oracleStats.monthRequests },
+                        { label: "Mensajes totales", value: oracleStats.totalRequests },
+                        { label: "Tokens promedio/msg", value: oracleStats.avgTokens.toLocaleString() },
+                        { label: "Tokens hoy", value: oracleStats.todayTokens.toLocaleString() },
+                        { label: "Tokens este mes", value: oracleStats.monthTokens.toLocaleString() },
+                        { label: "Tokens totales", value: oracleStats.totalTokens.toLocaleString() },
+                      ];
+                      return (
+                        <div className="adm-oracle-kpi-grid">
+                          {kpis.map(s => (
+                            <div key={s.label} style={{ background: "#f8fafc", borderRadius: 8, padding: "14px 16px" }}>
+                              <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 6, textTransform: "uppercase" as const, letterSpacing: 0.5 }}>{s.label}</div>
+                              <div style={{ fontSize: 22, fontWeight: 700, color: P }}>{s.value}</div>
+                            </div>
+                          ))}
+                          <div style={{ background: "#f8fafc", borderRadius: 8, padding: "14px 16px", border: `1px solid ${tokenColor}33` }}>
+                            <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 6, textTransform: "uppercase" as const, letterSpacing: 0.5 }}>Tokens disponibles hoy</div>
+                            <div style={{ fontSize: 22, fontWeight: 700, color: tokenColor }}>{remaining.toLocaleString()}</div>
+                            <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 4 }}>de 500.000 · {Math.round(pct * 100)}% restante</div>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+
+                  {/* Per-user consumption */}
                   {(() => {
                     const DAILY_LIMIT = 500_000;
-                    const remaining = Math.max(0, DAILY_LIMIT - oracleStats.todayTokens);
-                    const pct = remaining / DAILY_LIMIT;
-                    const tokenColor = pct > 0.3 ? "#16a34a" : pct > 0.1 ? "#d97706" : "#dc2626";
-                    const kpis = [
-                      { label: "Mensajes hoy", value: oracleStats.todayRequests },
-                      { label: "Mensajes este mes", value: oracleStats.monthRequests },
-                      { label: "Mensajes totales", value: oracleStats.totalRequests },
-                      { label: "Tokens promedio/msg", value: oracleStats.avgTokens.toLocaleString() },
-                      { label: "Tokens hoy", value: oracleStats.todayTokens.toLocaleString() },
-                      { label: "Tokens este mes", value: oracleStats.monthTokens.toLocaleString() },
-                      { label: "Tokens totales", value: oracleStats.totalTokens.toLocaleString() },
-                    ];
+                    const activeUsersCount = Math.max(users.filter(u => u.is_active).length, 1);
+                    const limitPerUser = Math.floor(DAILY_LIMIT / activeUsersCount);
+                    const avgMsg = oracleStats.avgTokens || 500;
+                    const PAGE_SIZE = 5;
+                    const enriched = oracleStats.userUsage
+                      .map(u => {
+                        const isAdmin = oracleStats.adminUserIds.includes(u.userId);
+                        const userRow = users.find(ur => ur.id === u.userId);
+                        if (!userRow && !isAdmin) return null;
+                        const available = isAdmin ? Infinity : Math.max(0, limitPerUser - u.tokens);
+                        return { ...u, email: isAdmin ? "ADMIN" : (userRow?.email ?? u.userId), available, availableMsgs: isAdmin ? Infinity : Math.floor(available / avgMsg), isAdmin };
+                      })
+                      .filter((u): u is NonNullable<typeof u> => u !== null)
+                      .sort((a, b) => (b.isAdmin ? 1 : 0) - (a.isAdmin ? 1 : 0));
+                    const totalPages = Math.ceil(enriched.length / PAGE_SIZE);
+                    const page = Math.min(userUsagePage, Math.max(0, totalPages - 1));
+                    const paged = enriched.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
                     return (
-                      <div className="adm-oracle-kpi-grid">
-                        {kpis.map(s => (
-                          <div key={s.label} style={{ background: "#f8fafc", borderRadius: 8, padding: "12px 16px" }}>
-                            <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 4, textTransform: "uppercase" as const, letterSpacing: 0.5 }}>{s.label}</div>
-                            <div style={{ fontSize: 20, fontWeight: 700, color: P }}>{s.value}</div>
+                      <div style={card}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
+                          <div>
+                            <div style={{ fontWeight: 700, fontSize: 15, color: "#1e293b" }}>Consumo por usuario hoy</div>
+                            <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 3 }}>
+                              Cuota equitativa: {limitPerUser.toLocaleString()} tokens/usuario · {activeUsersCount} usuario{activeUsersCount !== 1 ? "s" : ""} activo{activeUsersCount !== 1 ? "s" : ""}
+                            </div>
                           </div>
-                        ))}
-                        <div style={{ background: "#f8fafc", borderRadius: 8, padding: "12px 16px", border: `1px solid ${tokenColor}22` }}>
-                          <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 4, textTransform: "uppercase" as const, letterSpacing: 0.5 }}>Tokens disponibles hoy</div>
-                          <div style={{ fontSize: 20, fontWeight: 700, color: tokenColor }}>{remaining.toLocaleString()}</div>
-                          <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 3 }}>de 500.000 · {Math.round(pct * 100)}% restante</div>
+                          {totalPages > 1 && (
+                            <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                              <button onClick={() => setUserUsagePage(p => Math.max(0, p - 1))} disabled={page === 0}
+                                style={{ padding: "3px 10px", borderRadius: 5, border: "1px solid #e2e8f0", background: "#fff", color: "#64748b", fontSize: 12, cursor: page === 0 ? "default" : "pointer", opacity: page === 0 ? 0.4 : 1 }}>←</button>
+                              <span style={{ fontSize: 11, color: "#94a3b8" }}>{page + 1} / {totalPages}</span>
+                              <button onClick={() => setUserUsagePage(p => Math.min(totalPages - 1, p + 1))} disabled={page === totalPages - 1}
+                                style={{ padding: "3px 10px", borderRadius: 5, border: "1px solid #e2e8f0", background: "#fff", color: "#64748b", fontSize: 12, cursor: page === totalPages - 1 ? "default" : "pointer", opacity: page === totalPages - 1 ? 0.4 : 1 }}>→</button>
+                            </div>
+                          )}
                         </div>
+                        {enriched.length === 0 ? (
+                          <div style={{ textAlign: "center", padding: "28px 0", color: "#94a3b8", fontSize: 13 }}>Sin actividad hoy todavía.</div>
+                        ) : (
+                          <div style={{ border: "1px solid #e2e8f0", borderRadius: 8, overflow: "hidden" }}>
+                            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+                              <thead>
+                                <tr style={{ background: "#f8fafc" }}>
+                                  {["#", "Email", "Mensajes hoy", "Tokens hoy", "Tokens disponibles", "Mensajes disponibles"].map(h => (
+                                    <th key={h} style={{ padding: "9px 12px", textAlign: "left", fontWeight: 600, color: "#64748b", fontSize: 11, textTransform: "uppercase" as const, letterSpacing: 0.5, whiteSpace: "nowrap" as const }}>{h}</th>
+                                  ))}
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {paged.map((u, i) => {
+                                  const rank = page * PAGE_SIZE + i + 1;
+                                  const usedPct = u.isAdmin ? 0 : (limitPerUser > 0 ? (u.tokens / limitPerUser) : 0);
+                                  const barColor = u.isAdmin ? "#7c3aed" : usedPct < 0.6 ? "#16a34a" : usedPct < 0.85 ? "#d97706" : "#dc2626";
+                                  return (
+                                    <tr key={u.userId} style={{ borderTop: "1px solid #f1f5f9", background: u.isAdmin ? "#faf5ff" : i % 2 === 0 ? "#fff" : "#fafafa" }}>
+                                      <td style={{ padding: "9px 12px", color: "#94a3b8", fontWeight: 600, width: 28 }}>{rank}</td>
+                                      <td style={{ padding: "9px 12px", color: u.isAdmin ? "#7c3aed" : "#1e293b", fontWeight: u.isAdmin ? 700 : 500, maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{u.email}</td>
+                                      <td style={{ padding: "9px 12px", color: "#374151" }}>{u.messages}</td>
+                                      <td style={{ padding: "9px 12px" }}>
+                                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                          <div style={{ width: 60, height: 5, background: "#f1f5f9", borderRadius: 3, flexShrink: 0 }}>
+                                            <div style={{ height: "100%", width: `${Math.min(100, usedPct * 100)}%`, background: barColor, borderRadius: 3 }} />
+                                          </div>
+                                          <span style={{ color: "#374151" }}>{u.tokens.toLocaleString()}</span>
+                                        </div>
+                                      </td>
+                                      <td style={{ padding: "9px 12px", color: u.isAdmin ? "#7c3aed" : u.available === 0 ? "#dc2626" : "#16a34a", fontWeight: 600 }}>{u.isAdmin ? "∞" : u.available.toLocaleString()}</td>
+                                      <td style={{ padding: "9px 12px", color: u.isAdmin ? "#7c3aed" : u.availableMsgs === 0 ? "#dc2626" : "#374151" }}>{u.isAdmin ? "∞" : u.availableMsgs}</td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
                       </div>
                     );
                   })()}
 
-                  {/* Top keywords + recent questions */}
+                  {/* Keywords + recent questions */}
                   {(oracleStats.topKeywords.length > 0 || oracleStats.recentQuestions.length > 0) && (
                     <div className="adm-oracle-meta-grid">
-                      {/* Top keywords */}
                       {oracleStats.topKeywords.length > 0 && (
-                        <div>
-                          <div style={{ fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 10 }}>Palabras más consultadas</div>
-                          <div style={{ display: "flex", flexWrap: "wrap" as const, gap: 6 }}>
+                        <div style={card}>
+                          <div style={{ fontSize: 14, fontWeight: 600, color: "#1e293b", marginBottom: 14 }}>Palabras más consultadas</div>
+                          <div style={{ display: "flex", flexWrap: "wrap" as const, gap: 8 }}>
                             {oracleStats.topKeywords.map(k => (
                               <span key={k.word} onClick={() => setKwFilter(k.word)} style={{
-                                padding: "4px 10px", borderRadius: 100, fontSize: 12,
-                                background: PL, color: P, fontWeight: 500,
-                                cursor: "pointer",
+                                padding: "5px 12px", borderRadius: 100, fontSize: 12,
+                                background: PL, color: P, fontWeight: 500, cursor: "pointer",
                               }}>
                                 {k.word} <span style={{ opacity: 0.6 }}>({k.count})</span>
                               </span>
@@ -690,25 +807,21 @@ export default function Admin() {
                           </div>
                         </div>
                       )}
-
-                      {/* Recent questions */}
                       {oracleStats.recentQuestions.length > 0 && (
-                        <div>
-                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                            <div style={{ fontSize: 12, fontWeight: 600, color: "#374151" }}>Últimas preguntas</div>
+                        <div style={card}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+                            <div style={{ fontSize: 14, fontWeight: 600, color: "#1e293b" }}>Últimas preguntas</div>
                             {oracleStats.recentQuestions.length > 5 && (
-                              <button
-                                onClick={() => setAllQuestionsOpen(true)}
-                                style={{ fontSize: 11, color: P, background: "none", border: "none", cursor: "pointer", fontWeight: 500, padding: 0 }}
-                              >
+                              <button onClick={() => setAllQuestionsOpen(true)}
+                                style={{ fontSize: 12, color: P, background: "none", border: "none", cursor: "pointer", fontWeight: 500, padding: 0 }}>
                                 Ver todas ({oracleStats.recentQuestions.length}) →
                               </button>
                             )}
                           </div>
-                          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                             {oracleStats.recentQuestions.slice(0, 5).map((q, i) => (
-                              <div key={i} style={{ fontSize: 12, color: "#374151", background: "#f8fafc", borderRadius: 6, padding: "6px 10px" }}>
-                                <span style={{ color: "#94a3b8", marginRight: 6 }}>{fmt(q.created_at)}</span>
+                              <div key={i} style={{ fontSize: 12, color: "#374151", background: "#f8fafc", borderRadius: 6, padding: "8px 12px" }}>
+                                <span style={{ color: "#94a3b8", marginRight: 8 }}>{fmt(q.created_at)}</span>
                                 {q.question.length > 80 ? q.question.slice(0, 80) + "..." : q.question}
                               </div>
                             ))}
@@ -719,187 +832,157 @@ export default function Admin() {
                   )}
                 </div>
               ) : (
-                <div style={{ color: "#94a3b8", fontSize: 13 }}>Cargando estadísticas...</div>
-              )}
-            </div>
-            {/* Add form */}
-            <div style={card}>
-              <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 18, color: "#1e293b" }}>Agregar contenido al Oráculo</div>
-              <form onSubmit={addOracleDoc} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                <div className="adm-form-row">
-                  <div style={{ flex: 1 }}>
-                    <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 6 }}>Título</label>
-                    <input
-                      type="text"
-                      value={addForm.title}
-                      onChange={e => setAddForm(f => ({ ...f, title: e.target.value }))}
-                      placeholder="Ej: Arcanos Mayores — significados"
-                      required
-                      style={{ width: "100%", padding: "9px 12px", border: "1px solid #e2e8f0", borderRadius: 6, fontSize: 14, outline: "none", boxSizing: "border-box" as const, color: "#1e293b" }}
-                    />
-                  </div>
-                  <div>
-                    <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 6 }}>Tipo</label>
-                    <select
-                      value={addForm.source_type}
-                      onChange={e => setAddForm(f => ({ ...f, source_type: e.target.value, content: "" }))}
-                      style={{ padding: "9px 12px", border: "1px solid #e2e8f0", borderRadius: 6, fontSize: 14, outline: "none", color: "#1e293b", background: "#fff", cursor: "pointer" }}
-                    >
-                      <option value="text">Texto</option>
-                      <option value="pdf">PDF</option>
-                    </select>
-                  </div>
+                <div style={{ textAlign: "center", padding: 60, color: "#94a3b8", fontSize: 13 }}>Cargando estadísticas...</div>
+              )
+            ) : (
+              /* ── BASE DE CONOCIMIENTO ── */
+              <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+                {/* Add form */}
+                <div style={card}>
+                  <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 20, color: "#1e293b" }}>Agregar contenido al Oráculo</div>
+                  <form onSubmit={addOracleDoc} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                    <div className="adm-form-row">
+                      <div style={{ flex: 1 }}>
+                        <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 6 }}>Título</label>
+                        <input
+                          type="text"
+                          value={addForm.title}
+                          onChange={e => setAddForm(f => ({ ...f, title: e.target.value }))}
+                          placeholder="Ej: Arcanos Mayores — significados"
+                          required
+                          style={{ width: "100%", padding: "9px 12px", border: "1px solid #e2e8f0", borderRadius: 6, fontSize: 14, outline: "none", boxSizing: "border-box" as const, color: "#1e293b" }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 6 }}>Tipo</label>
+                        <select
+                          value={addForm.source_type}
+                          onChange={e => setAddForm(f => ({ ...f, source_type: e.target.value, content: "" }))}
+                          style={{ padding: "9px 12px", border: "1px solid #e2e8f0", borderRadius: 6, fontSize: 14, outline: "none", color: "#1e293b", background: "#fff", cursor: "pointer" }}
+                        >
+                          <option value="text">Texto</option>
+                          <option value="pdf">PDF</option>
+                        </select>
+                      </div>
+                    </div>
+                    {addForm.source_type === "pdf" && (
+                      <div>
+                        <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 6 }}>Archivo PDF</label>
+                        <label style={{
+                          display: "flex", alignItems: "center", gap: 10, padding: "10px 16px",
+                          border: "1px dashed #cbd5e1", borderRadius: 6, cursor: pdfExtracting ? "not-allowed" : "pointer",
+                          background: pdfExtracting ? "#f8fafc" : "#fff", color: "#64748b", fontSize: 13,
+                        }}>
+                          <span style={{ fontSize: 18 }}>📄</span>
+                          <span>{pdfExtracting ? "Extrayendo texto..." : addForm.content ? "PDF cargado — podés cambiar el archivo" : "Hacé click para seleccionar un PDF"}</span>
+                          <input type="file" accept=".pdf" disabled={pdfExtracting}
+                            onChange={e => { const f = e.target.files?.[0]; if (f) handlePdfUpload(f); }}
+                            style={{ display: "none" }} />
+                        </label>
+                        {pdfExtracting && <div style={{ fontSize: 12, color: P, marginTop: 6 }}>Leyendo páginas del PDF...</div>}
+                      </div>
+                    )}
+                    <div>
+                      <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 6 }}>
+                        {addForm.source_type === "pdf" ? "Texto extraído (revisá antes de guardar)" : "Contenido"}
+                      </label>
+                      <textarea
+                        value={addForm.content}
+                        onChange={e => setAddForm(f => ({ ...f, content: e.target.value }))}
+                        required rows={8}
+                        placeholder={addForm.source_type === "pdf" ? "El texto del PDF aparecerá aquí automáticamente..." : "Escribí o pegá el texto que el Oráculo debe conocer..."}
+                        style={{ width: "100%", padding: "10px 12px", border: "1px solid #e2e8f0", borderRadius: 6, fontSize: 13, outline: "none", boxSizing: "border-box" as const, color: "#1e293b", resize: "vertical" as const, fontFamily: "inherit", lineHeight: 1.6 }}
+                      />
+                      {addForm.content && <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 4 }}>{addForm.content.length.toLocaleString()} caracteres</div>}
+                    </div>
+                    <button type="submit" disabled={addLoading}
+                      style={{ alignSelf: "flex-start", padding: "10px 24px", borderRadius: 6, border: "none", background: P, color: "#fff", fontWeight: 600, fontSize: 14, cursor: addLoading ? "not-allowed" : "pointer", opacity: addLoading ? 0.7 : 1 }}>
+                      {addLoading ? "Guardando..." : "Agregar al Oráculo"}
+                    </button>
+                  </form>
                 </div>
 
-                {addForm.source_type === "pdf" && (
-                  <div>
-                    <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 6 }}>Archivo PDF</label>
-                    <label style={{
-                      display: "flex", alignItems: "center", gap: 10, padding: "10px 16px",
-                      border: "1px dashed #cbd5e1", borderRadius: 6, cursor: pdfExtracting ? "not-allowed" : "pointer",
-                      background: pdfExtracting ? "#f8fafc" : "#fff", color: "#64748b", fontSize: 13,
-                    }}>
-                      <span style={{ fontSize: 18 }}>📄</span>
-                      <span>{pdfExtracting ? "Extrayendo texto..." : addForm.content ? "PDF cargado — podés cambiar el archivo" : "Hacé click para seleccionar un PDF"}</span>
-                      <input
-                        type="file"
-                        accept=".pdf"
-                        disabled={pdfExtracting}
-                        onChange={e => { const f = e.target.files?.[0]; if (f) handlePdfUpload(f); }}
-                        style={{ display: "none" }}
-                      />
-                    </label>
-                    {pdfExtracting && (
-                      <div style={{ fontSize: 12, color: "#7c3aed", marginTop: 6 }}>Leyendo páginas del PDF...</div>
+                {/* Docs list */}
+                <div style={card}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: 15, color: "#1e293b" }}>Base de conocimiento</div>
+                      <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 3 }}>
+                        {oracleDocs.filter(d => d.active).length} activos · {oracleDocs.length} total
+                      </div>
+                    </div>
+                    {oracleDocs.length > 0 && (
+                      <button onClick={() => setDeleteAllConfirm(true)}
+                        style={{ padding: "5px 14px", borderRadius: 6, border: "1px solid #fecaca", background: "#fff", color: "#dc2626", fontSize: 12, cursor: "pointer", fontWeight: 500 }}>
+                        Eliminar todos
+                      </button>
                     )}
                   </div>
-                )}
-
-                <div>
-                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 6 }}>
-                    {addForm.source_type === "pdf" ? "Texto extraído (revisá antes de guardar)" : "Contenido"}
-                  </label>
-                  <textarea
-                    value={addForm.content}
-                    onChange={e => setAddForm(f => ({ ...f, content: e.target.value }))}
-                    required
-                    rows={8}
-                    placeholder={addForm.source_type === "pdf" ? "El texto del PDF aparecerá aquí automáticamente..." : "Escribí o pegá el texto que el Oráculo debe conocer..."}
-                    style={{ width: "100%", padding: "10px 12px", border: "1px solid #e2e8f0", borderRadius: 6, fontSize: 13, outline: "none", boxSizing: "border-box" as const, color: "#1e293b", resize: "vertical" as const, fontFamily: "inherit", lineHeight: 1.6 }}
-                  />
-                  {addForm.content && (
-                    <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 4 }}>{addForm.content.length.toLocaleString()} caracteres</div>
+                  {oracleLoading ? (
+                    <div style={{ textAlign: "center", padding: 32, color: "#94a3b8", fontSize: 14 }}>Cargando...</div>
+                  ) : oracleDocs.length === 0 ? (
+                    <div style={{ textAlign: "center", padding: 32, color: "#94a3b8", fontSize: 14 }}>Sin contenido todavía. Agregá el primer documento arriba.</div>
+                  ) : (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                      {groupDocs(oracleDocs).map(group => {
+                        const isExpanded = expandedGroups.has(group.baseTitle);
+                        return (
+                          <div key={group.baseTitle} style={{ border: "1px solid #e2e8f0", borderRadius: 8, overflow: "hidden", background: group.allActive ? "#fff" : "#f8fafc", opacity: group.allActive ? 1 : 0.65 }}>
+                            <div style={{ padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4, flexWrap: "wrap" as const }}>
+                                  <span style={{ fontWeight: 600, fontSize: 14, color: "#1e293b" }}>{group.baseTitle}</span>
+                                  <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 100, background: "#f1f5f9", color: "#64748b", textTransform: "uppercase" as const, letterSpacing: 0.5 }}>{group.source_type}</span>
+                                  {group.isChunked && (
+                                    <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 100, background: PL, color: P, fontWeight: 600 }}>{group.chunks.length} partes</span>
+                                  )}
+                                  <span style={{ fontSize: 11, color: "#94a3b8" }}>{group.totalChars.toLocaleString()} chars</span>
+                                </div>
+                                <div style={{ fontSize: 11, color: "#cbd5e1" }}>{fmt(group.created_at)}</div>
+                              </div>
+                              <div style={{ display: "flex", gap: 8, flexShrink: 0, alignItems: "center", flexWrap: "wrap" as const }}>
+                                {group.isChunked && (
+                                  <button
+                                    onClick={() => setExpandedGroups(prev => { const next = new Set(prev); if (next.has(group.baseTitle)) next.delete(group.baseTitle); else next.add(group.baseTitle); return next; })}
+                                    style={{ padding: "5px 10px", borderRadius: 6, border: "1px solid #e2e8f0", background: "#fff", color: "#64748b", fontSize: 12, cursor: "pointer" }}>
+                                    {isExpanded ? "▲ Ocultar" : "▼ Ver partes"}
+                                  </button>
+                                )}
+                                <button onClick={() => toggleOracleGroup(group)} style={{
+                                  padding: "5px 12px", borderRadius: 6,
+                                  border: "1px solid " + (group.allActive ? "#e2e8f0" : "#16a34a"),
+                                  background: group.allActive ? "#fff" : "#dcfce7",
+                                  color: group.allActive ? "#64748b" : "#16a34a",
+                                  fontSize: 12, cursor: "pointer", fontWeight: 500,
+                                }}>{group.allActive ? "Desactivar" : "Activar"}</button>
+                                <button
+                                  onClick={() => { if (confirm(`¿Eliminar "${group.baseTitle}"${group.isChunked ? ` y sus ${group.chunks.length} partes` : ""}?`)) void deleteOracleGroup(group); }}
+                                  style={{ padding: "5px 12px", borderRadius: 6, border: "1px solid #fecaca", background: "#fff", color: "#dc2626", fontSize: 12, cursor: "pointer" }}>
+                                  Eliminar
+                                </button>
+                              </div>
+                            </div>
+                            {group.isChunked && isExpanded && (
+                              <div style={{ borderTop: "1px solid #f1f5f9", background: "#f8fafc", padding: "8px 16px 12px", display: "flex", flexDirection: "column", gap: 6 }}>
+                                {group.chunks.map((chunk, ci) => (
+                                  <div key={chunk.id} style={{ display: "flex", gap: 8, alignItems: "flex-start", fontSize: 12, color: "#64748b" }}>
+                                    <span style={{ flexShrink: 0, fontWeight: 600, color: "#94a3b8", minWidth: 20 }}>{ci + 1}.</span>
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                      <span style={{ color: "#374151", fontWeight: 500 }}>{chunk.content.length.toLocaleString()} chars</span>
+                                      <span style={{ color: "#cbd5e1", marginLeft: 8 }}>{chunk.content.slice(0, 100)}{chunk.content.length > 100 ? "..." : ""}</span>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
                   )}
                 </div>
-                <button
-                  type="submit"
-                  disabled={addLoading}
-                  style={{ alignSelf: "flex-start", padding: "10px 24px", borderRadius: 6, border: "none", background: P, color: "#fff", fontWeight: 600, fontSize: 14, cursor: addLoading ? "not-allowed" : "pointer", opacity: addLoading ? 0.7 : 1 }}
-                >
-                  {addLoading ? "Guardando..." : "Agregar al Oráculo"}
-                </button>
-              </form>
-            </div>
-
-            {/* Docs list */}
-            <div style={card}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-                <div style={{ fontWeight: 700, fontSize: 15, color: "#1e293b" }}>
-                  Base de conocimiento
-                  <span style={{ marginLeft: 8, fontSize: 12, fontWeight: 400, color: "#94a3b8" }}>
-                    {oracleDocs.filter(d => d.active).length} activos · {oracleDocs.length} total
-                  </span>
-                </div>
-                {oracleDocs.length > 0 && (
-                  <button
-                    onClick={() => setDeleteAllConfirm(true)}
-                    style={{ padding: "5px 14px", borderRadius: 6, border: "1px solid #fecaca", background: "#fff", color: "#dc2626", fontSize: 12, cursor: "pointer", fontWeight: 500 }}
-                  >
-                    Eliminar todos
-                  </button>
-                )}
               </div>
-              {oracleLoading ? (
-                <div style={{ textAlign: "center", padding: 32, color: "#94a3b8", fontSize: 14 }}>Cargando...</div>
-              ) : oracleDocs.length === 0 ? (
-                <div style={{ textAlign: "center", padding: 32, color: "#94a3b8", fontSize: 14 }}>Sin contenido todavía. Agregá el primer documento arriba.</div>
-              ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                  {groupDocs(oracleDocs).map(group => {
-                    const isExpanded = expandedGroups.has(group.baseTitle);
-                    return (
-                      <div key={group.baseTitle} style={{ border: "1px solid #e2e8f0", borderRadius: 8, overflow: "hidden", background: group.allActive ? "#fff" : "#f8fafc", opacity: group.allActive ? 1 : 0.65 }}>
-                        {/* Group header */}
-                        <div style={{ padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4, flexWrap: "wrap" as const }}>
-                              <span style={{ fontWeight: 600, fontSize: 14, color: "#1e293b" }}>{group.baseTitle}</span>
-                              <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 100, background: "#f1f5f9", color: "#64748b", textTransform: "uppercase" as const, letterSpacing: 0.5 }}>{group.source_type}</span>
-                              {group.isChunked && (
-                                <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 100, background: PL, color: P, fontWeight: 600 }}>
-                                  {group.chunks.length} partes
-                                </span>
-                              )}
-                              <span style={{ fontSize: 11, color: "#94a3b8" }}>{group.totalChars.toLocaleString()} chars</span>
-                            </div>
-                            <div style={{ fontSize: 11, color: "#cbd5e1" }}>{fmt(group.created_at)}</div>
-                          </div>
-                          <div style={{ display: "flex", gap: 8, flexShrink: 0, alignItems: "center", flexWrap: "wrap" as const }}>
-                            {group.isChunked && (
-                              <button
-                                onClick={() => setExpandedGroups(prev => {
-                                  const next = new Set(prev);
-                                  if (next.has(group.baseTitle)) next.delete(group.baseTitle);
-                                  else next.add(group.baseTitle);
-                                  return next;
-                                })}
-                                style={{ padding: "5px 10px", borderRadius: 6, border: "1px solid #e2e8f0", background: "#fff", color: "#64748b", fontSize: 12, cursor: "pointer" }}
-                              >
-                                {isExpanded ? "▲ Ocultar" : "▼ Ver partes"}
-                              </button>
-                            )}
-                            <button
-                              onClick={() => toggleOracleGroup(group)}
-                              style={{
-                                padding: "5px 12px", borderRadius: 6,
-                                border: "1px solid " + (group.allActive ? "#e2e8f0" : "#16a34a"),
-                                background: group.allActive ? "#fff" : "#dcfce7",
-                                color: group.allActive ? "#64748b" : "#16a34a",
-                                fontSize: 12, cursor: "pointer", fontWeight: 500,
-                              }}
-                            >
-                              {group.allActive ? "Desactivar" : "Activar"}
-                            </button>
-                            <button
-                              onClick={() => { if (confirm(`¿Eliminar "${group.baseTitle}"${group.isChunked ? ` y sus ${group.chunks.length} partes` : ""}?`)) void deleteOracleGroup(group); }}
-                              style={{ padding: "5px 12px", borderRadius: 6, border: "1px solid #fecaca", background: "#fff", color: "#dc2626", fontSize: 12, cursor: "pointer" }}
-                            >
-                              Eliminar
-                            </button>
-                          </div>
-                        </div>
-                        {/* Chunks expandable */}
-                        {group.isChunked && isExpanded && (
-                          <div style={{ borderTop: "1px solid #f1f5f9", background: "#f8fafc", padding: "8px 16px 12px", display: "flex", flexDirection: "column", gap: 6 }}>
-                            {group.chunks.map((chunk, ci) => (
-                              <div key={chunk.id} style={{ display: "flex", gap: 8, alignItems: "flex-start", fontSize: 12, color: "#64748b" }}>
-                                <span style={{ flexShrink: 0, fontWeight: 600, color: "#94a3b8", minWidth: 20 }}>{ci + 1}.</span>
-                                <div style={{ flex: 1, minWidth: 0 }}>
-                                  <span style={{ color: "#374151", fontWeight: 500 }}>{chunk.content.length.toLocaleString()} chars</span>
-                                  <span style={{ color: "#cbd5e1", marginLeft: 8 }}>
-                                    {chunk.content.slice(0, 100)}{chunk.content.length > 100 ? "..." : ""}
-                                  </span>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+            )}
           </div>
         ) : (
           /* ── USUARIOS ── */

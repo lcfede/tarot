@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy:oracle": "supabase functions deploy oracle-chat --no-verify-jwt"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.100.0",

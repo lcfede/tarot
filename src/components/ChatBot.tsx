@@ -2,6 +2,38 @@ import { useState, useRef, useEffect } from "react";
 import type { ChatMessage } from "../data/types";
 import { supabase } from "../lib/supabase";
 
+function inlineMarkdown(text: string): React.ReactNode[] {
+  const parts = text.split(/(\*\*[^*]+\*\*|\*[^*]+\*)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith("**") && part.endsWith("**"))
+      return <strong key={i} style={{ fontWeight: 700, color: "#e8dcc8" }}>{part.slice(2, -2)}</strong>;
+    if (part.startsWith("*") && part.endsWith("*"))
+      return <em key={i}>{part.slice(1, -1)}</em>;
+    return part;
+  });
+}
+
+function MarkdownText({ text }: { text: string }) {
+  const lines = text.split("\n");
+  return (
+    <>
+      {lines.map((line, i) => {
+        if (line.startsWith("### "))
+          return <div key={i} style={{ fontWeight: 700, fontSize: 14, color: "#c9a84c", marginTop: 10, marginBottom: 2 }}>{inlineMarkdown(line.slice(4))}</div>;
+        if (line.startsWith("## "))
+          return <div key={i} style={{ fontWeight: 700, fontSize: 15, color: "#c9a84c", marginTop: 10, marginBottom: 2 }}>{inlineMarkdown(line.slice(3))}</div>;
+        if (line.startsWith("# "))
+          return <div key={i} style={{ fontWeight: 700, fontSize: 16, color: "#c9a84c", marginTop: 12, marginBottom: 4 }}>{inlineMarkdown(line.slice(2))}</div>;
+        if (/^[-*] /.test(line))
+          return <div key={i} style={{ display: "flex", gap: 7, marginTop: 3 }}><span style={{ color: "#c9a84c", flexShrink: 0, marginTop: 1 }}>•</span><span>{inlineMarkdown(line.slice(2))}</span></div>;
+        if (line.trim() === "")
+          return <div key={i} style={{ height: 6 }} />;
+        return <div key={i}>{inlineMarkdown(line)}</div>;
+      })}
+    </>
+  );
+}
+
 export default function ChatBot() {
   const [ms, setMs] = useState<ChatMessage[]>([{
     r: "a",
@@ -40,6 +72,11 @@ export default function ChatBot() {
         body: { messages: history },
       });
       if (error) throw error;
+      if (data.quota_exceeded) {
+        setMs((m) => [...m, { r: "a", t: "Has consumido todos los mensajes disponibles para hoy. Volvé mañana para seguir consultando al Oráculo. 🌙" }]);
+        setLd(false);
+        return;
+      }
       setMs((m) => [...m, { r: "a", t: data.text || "Error." }]);
     } catch {
       setMs((m) => [...m, { r: "a", t: "Error de conexión." }]);
@@ -117,12 +154,11 @@ export default function ChatBot() {
                   color: "#ddd0b5",
                   fontSize: 14,
                   lineHeight: 1.8,
-                  whiteSpace: "pre-wrap",
                   wordBreak: "break-word",
                   fontFamily: "Georgia,serif",
                 }}
               >
-                {m.t}
+                <MarkdownText text={m.t} />
               </div>
             </div>
           )

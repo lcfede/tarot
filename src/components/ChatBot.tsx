@@ -42,10 +42,24 @@ export default function ChatBot() {
   const [inp, setInp] = useState("");
   const [ld, setLd] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
+  const lastMsgRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    if (listRef.current) listRef.current.scrollTop = listRef.current.scrollHeight;
+    const container = listRef.current;
+    if (!container) return;
+    if (ld) {
+      // User just sent — scroll to bottom to show typing indicator
+      container.scrollTop = container.scrollHeight;
+    } else {
+      const last = ms[ms.length - 1];
+      if (last?.r === "a" && lastMsgRef.current) {
+        // Assistant just responded — scroll to the start of the message
+        container.scrollTop = lastMsgRef.current.offsetTop - container.offsetTop;
+      } else {
+        container.scrollTop = container.scrollHeight;
+      }
+    }
   }, [ms, ld]);
 
   // Auto-resize textarea
@@ -113,7 +127,7 @@ export default function ChatBot() {
         {ms.map((m, i) =>
           m.r === "u" ? (
             /* User bubble */
-            <div key={i} style={{ display: "flex", justifyContent: "flex-end" }}>
+            <div key={i} ref={i === ms.length - 1 ? lastMsgRef : undefined} style={{ display: "flex", justifyContent: "flex-end" }}>
               <div
                 style={{
                   maxWidth: "80%",
@@ -133,7 +147,7 @@ export default function ChatBot() {
             </div>
           ) : (
             /* Oracle bubble */
-            <div key={i} style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+            <div key={i} ref={i === ms.length - 1 ? lastMsgRef : undefined} style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
               <div
                 style={{
                   width: 26, height: 26, borderRadius: "50%", flexShrink: 0,

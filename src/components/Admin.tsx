@@ -323,7 +323,7 @@ export default function Admin() {
           .join(" ");
         fullText += pageText + "\n\n";
       }
-      const extracted = fullText.trim();
+      const extracted = fullText.replace(/\u0000/g, "").trim();
       setAddForm(f => ({
         ...f,
         content: extracted,

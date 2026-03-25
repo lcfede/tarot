@@ -43,7 +43,7 @@ export default function SpreadPractice() {
   const sp = SPS[k];
   return (
     <div>
-      <button onClick={() => setK(null)} style={{ background: "none", border: "none", color: "#d4a843", cursor: "pointer", fontSize: 13, padding: 0, marginBottom: 10 }}>
+      <button onClick={() => setK(null)} style={{ padding: "6px 14px", borderRadius: 8, border: "1px solid rgba(212,168,67,0.45)", background: "rgba(212,168,67,0.07)", color: "#d4a843", cursor: "pointer", fontSize: 13, marginBottom: 14, display: "inline-flex", alignItems: "center", gap: 6 }}>
         {"← Cambiar tirada"}
       </button>
       <h3 style={{ fontFamily: hf, color: "#e0d5c0", margin: "0 0 4px" }}>{sp.nm}</h3>

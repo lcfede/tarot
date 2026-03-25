@@ -14,7 +14,7 @@ export default function CardDetail({ c, onBack }: Props) {
   return (
     <div>
       <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
-        <CardImg c={c} w={145} h={238} glow />
+        <CardImg c={c} w={189} h={309} glow />
         <div style={{ flex: 1, minWidth: 220 }}>
           <h2 style={{ fontFamily: hf, color: "#e0d5c0", margin: "0 0 2px", fontSize: 24 }}>{c.nm}</h2>
           <p style={{ color: "#666", fontSize: 12, margin: "0 0 10px" }}>{c.n} · {c.el || c.suit}</p>

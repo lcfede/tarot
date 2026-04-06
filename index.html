@@ -6,6 +6,11 @@
     <title>Aprende Tarot</title>
   </head>
   <body>
+    <script>
+      var h = window.location.hash;
+      if (h.indexOf('type=invite') !== -1) sessionStorage.setItem('vt_auth_type', 'invite');
+      else if (h.indexOf('type=recovery') !== -1) sessionStorage.setItem('vt_auth_type', 'recovery');
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

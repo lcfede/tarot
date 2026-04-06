@@ -11,13 +11,31 @@ export default function ResetPassword() {
   const [error, setError] = useState("");
   const [ready, setReady] = useState(false);
 
+  const isInvite = sessionStorage.getItem("vt_auth_type") === "invite";
+
   useEffect(() => {
-    // Supabase fires PASSWORD_RECOVERY when the user lands with a valid token
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "PASSWORD_RECOVERY") setReady(true);
+      if (isInvite && session && (event === "SIGNED_IN" || event === "INITIAL_SESSION")) setReady(true);
     });
+
+    if (isInvite) {
+      // Try auto-detected session first
+      supabase.auth.getSession().then(async ({ data: { session } }) => {
+        if (session) { setReady(true); return; }
+        // Manually parse hash tokens if Supabase didn't auto-detect
+        const hash = new URLSearchParams(window.location.hash.replace("#", "?").slice(1));
+        const accessToken = hash.get("access_token");
+        const refreshToken = hash.get("refresh_token");
+        if (accessToken && refreshToken) {
+          const { error } = await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+          if (!error) setReady(true);
+        }
+      });
+    }
+
     return () => subscription.unsubscribe();
-  }, []);
+  }, [isInvite]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,6 +54,7 @@ export default function ResetPassword() {
     if (error) {
       setError("No se pudo actualizar la contraseña. Solicitá un nuevo link.");
     } else {
+      sessionStorage.removeItem("vt_auth_type");
       setDone(true);
       setTimeout(() => navigate("/curso"), 2500);
     }
@@ -58,7 +77,7 @@ export default function ResetPassword() {
             Visión Tarot
           </div>
           <h1 style={{ fontSize: 24, fontWeight: "bold", color: "#f5e6a3", letterSpacing: 2, margin: "0 0 8px" }}>
-            Nueva contraseña
+            {isInvite ? "Crear contraseña" : "Nueva contraseña"}
           </h1>
           <div style={{ width: 60, height: 1, background: "linear-gradient(90deg,transparent,#c9a84c,transparent)", margin: "16px auto 0" }} />
         </div>
@@ -67,12 +86,12 @@ export default function ResetPassword() {
           <div style={{ textAlign: "center" }}>
             <div style={{ fontSize: 28, marginBottom: 16, color: "#c9a84c" }}>✦</div>
             <p style={{ color: "#e8dcc8", fontSize: 14, lineHeight: 1.7, fontStyle: "italic" }}>
-              Contraseña actualizada. Redirigiendo al curso...
+              {isInvite ? "Contraseña creada. Redirigiendo al curso..." : "Contraseña actualizada. Redirigiendo al curso..."}
             </p>
           </div>
         ) : !ready ? (
           <p style={{ textAlign: "center", color: "rgba(201,168,76,0.65)", fontSize: 13, fontStyle: "italic" }}>
-            Verificando link...
+            {isInvite ? "Preparando tu acceso..." : "Verificando link..."}
           </p>
         ) : (
           <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>

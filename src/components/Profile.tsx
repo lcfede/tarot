@@ -21,6 +21,11 @@ export default function Profile() {
   const [startDate, setStartDate] = useState("");
   const [done, setDone] = useState<string[]>([]);
   const [cert, setCert] = useState<CertData | null>(null);
+  const [pwNew, setPwNew] = useState("");
+  const [pwConfirm, setPwConfirm] = useState("");
+  const [pwLoading, setPwLoading] = useState(false);
+  const [pwError, setPwError] = useState("");
+  const [pwDone, setPwDone] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -156,6 +161,69 @@ export default function Profile() {
                 </div>
               );
             })}
+          </div>
+        </div>
+
+        {/* Security section */}
+        <div style={{ marginBottom: 40 }}>
+          {sectionTitle("Seguridad")}
+          <div style={{ background: "rgba(201,168,76,0.04)", border: `1px solid ${goldFaint}`, borderRadius: 8, padding: "24px 28px" }}>
+            {pwDone ? (
+              <div style={{ textAlign: "center", color: gold, fontFamily: hf, fontSize: 16 }}>
+                Contraseña actualizada correctamente.
+              </div>
+            ) : (
+              <form
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  setPwError("");
+                  if (pwNew !== pwConfirm) { setPwError("Las contraseñas no coinciden."); return; }
+                  if (pwNew.length < 8) { setPwError("Mínimo 8 caracteres."); return; }
+                  setPwLoading(true);
+                  const { error } = await supabase.auth.updateUser({ password: pwNew });
+                  setPwLoading(false);
+                  if (error) { setPwError("No se pudo actualizar. Intentá de nuevo."); return; }
+                  setPwDone(true);
+                  setPwNew("");
+                  setPwConfirm("");
+                }}
+                style={{ display: "flex", flexDirection: "column", gap: 14 }}
+              >
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  <label style={{ fontSize: 11, letterSpacing: 2, textTransform: "uppercase" as const, color: goldMid, fontFamily: sf }}>
+                    Nueva contraseña
+                  </label>
+                  <input
+                    type="password"
+                    value={pwNew}
+                    onChange={(e) => setPwNew(e.target.value)}
+                    required
+                    placeholder="Mínimo 8 caracteres"
+                    style={{ background: "rgba(201,168,76,0.05)", border: `1px solid rgba(201,168,76,0.25)`, borderRadius: 4, padding: "10px 14px", color: "#f0e6d3", fontSize: 15, fontFamily: sf, outline: "none" }}
+                  />
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  <label style={{ fontSize: 11, letterSpacing: 2, textTransform: "uppercase" as const, color: goldMid, fontFamily: sf }}>
+                    Confirmar contraseña
+                  </label>
+                  <input
+                    type="password"
+                    value={pwConfirm}
+                    onChange={(e) => setPwConfirm(e.target.value)}
+                    required
+                    style={{ background: "rgba(201,168,76,0.05)", border: `1px solid rgba(201,168,76,0.25)`, borderRadius: 4, padding: "10px 14px", color: "#f0e6d3", fontSize: 15, fontFamily: sf, outline: "none" }}
+                  />
+                </div>
+                {pwError && <div style={{ color: "#e07070", fontSize: 13 }}>{pwError}</div>}
+                <button
+                  type="submit"
+                  disabled={pwLoading}
+                  style={{ alignSelf: "flex-start", padding: "10px 28px", borderRadius: 4, border: `1px solid ${gold}`, background: "linear-gradient(135deg,rgba(201,168,76,0.2),rgba(201,168,76,0.06))", color: "#f5e6a3", fontSize: 12, cursor: pwLoading ? "not-allowed" : "pointer", fontFamily: sf, letterSpacing: 3, textTransform: "uppercase" as const, opacity: pwLoading ? 0.6 : 1 }}
+                >
+                  {pwLoading ? "Guardando..." : "Cambiar contraseña"}
+                </button>
+              </form>
+            )}
           </div>
         </div>
 

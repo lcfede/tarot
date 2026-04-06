@@ -197,10 +197,20 @@ function CoursePage() {
   );
 }
 
+function RootRedirect() {
+  const authType = sessionStorage.getItem("vt_auth_type");
+  if (authType === "invite" || authType === "recovery") {
+    // Keep the hash so Supabase can read the tokens
+    window.history.replaceState(null, "", "/reset-password" + window.location.hash);
+    return <ResetPassword />;
+  }
+  return <Landing />;
+}
+
 export default function App() {
   return (
     <Routes>
-      <Route path="/" element={<Landing />} />
+      <Route path="/" element={<RootRedirect />} />
       <Route path="/landing2" element={<Landing2 />} />
       <Route path="/login" element={<Login />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />

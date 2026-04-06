@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 // ⚠️ Reemplazar con la URL real de Hotmart antes de publicar
-const PURCHASE_URL = "https://pay.hotmart.com/XXXXXXXX";
+const PURCHASE_URL = "https://pay.hotmart.com/X105246915J";
 
 const hf = "'Cormorant Garamond', Georgia, serif";
 const sf = "'DM Sans', sans-serif";
@@ -237,7 +237,7 @@ export default function Landing() {
 
           {/* CTA */}
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, width: "100%" }}>
-            <GoldBtn label="Quiero empezar ahora →" sub="Acceso inmediato por $17 USD · Pago único" onClick={buyNow} large />
+            <GoldBtn label="Quiero empezar ahora →" sub="Acceso inmediato por $19.99 USD · Pago único" onClick={buyNow} large />
             <div style={{ fontFamily: sf, fontSize: 12, color: textMuted }}>
               Sin mensualidades · Garantía de 7 días · Pago seguro via Hotmart
             </div>
@@ -396,11 +396,11 @@ export default function Landing() {
           marginBottom: 32, fontSize: 14,
         }}>
           {[
-            ["Plataforma Interactiva", "31 lecciones, 78 cartas, tiradas, tests, progreso", "$97"],
-            ["Tutor IA", "Chat ilimitado con IA especializada en tarot", "$47"],
-            ["Ebook El Negocio del Tarot", "Guía de monetización + plantillas listas", "$27"],
-            ["Ebook Las 78 Cartas", "Referencia PDF offline de todas las cartas", "$17"],
-            ["Acceso de por vida", "Sin mensualidades, tuyo para siempre", "$47"],
+            ["Plataforma Interactiva", "31 lecciones, 78 cartas, tiradas, tests, progreso", "$29"],
+            ["Tutor IA", "Chat ilimitado con IA especializada en tarot", "$19"],
+            ["Ebook El Negocio del Tarot", "Guía de monetización + plantillas listas", "$14"],
+            ["Ebook Las 78 Cartas", "Referencia PDF offline de todas las cartas", "$12"],
+            ["Acceso de por vida", "Sin mensualidades, tuyo para siempre", "$15"],
           ].map(([name, desc, val], i) => (
             <div key={name} className="value-row" style={{
               display: "flex", gap: 12, padding: "14px 20px",
@@ -422,7 +422,7 @@ export default function Landing() {
             borderTop: `1px solid rgba(201,168,76,0.2)`,
           }}>
             <div style={{ fontFamily: sf, fontWeight: 700, color: goldLight, fontSize: 15 }}>VALOR TOTAL</div>
-            <div style={{ fontFamily: hf, fontSize: 24, color: gold, fontWeight: 700 }}>$235</div>
+            <div style={{ fontFamily: hf, fontSize: 24, color: gold, fontWeight: 700 }}>$89</div>
           </div>
         </div>
 
@@ -436,8 +436,8 @@ export default function Landing() {
             Precio de lanzamiento — primeras 100 personas
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 16, justifyContent: "center", marginBottom: 4 }}>
-            <span style={{ fontFamily: hf, fontSize: 28, color: textMuted, textDecoration: "line-through", opacity: 0.6 }}>$235</span>
-            <span style={{ fontFamily: hf, fontSize: 64, color: gold, fontWeight: 700, lineHeight: 1 }}>$17</span>
+            <span style={{ fontFamily: hf, fontSize: 28, color: textMuted, textDecoration: "line-through", opacity: 0.6 }}>$89</span>
+            <span style={{ fontFamily: hf, fontSize: 64, color: gold, fontWeight: 700, lineHeight: 1 }}>$19.99</span>
             <span style={{ fontFamily: sf, fontSize: 14, color: textMuted }}>USD<br />pago único</span>
           </div>
           <div style={{ fontFamily: sf, fontSize: 13, color: textMuted, marginBottom: 24 }}>
@@ -575,7 +575,7 @@ export default function Landing() {
           <p style={{ fontFamily: sf, fontSize: 16, color: textMuted, lineHeight: 1.7, maxWidth: 480, margin: 0 }}>
             Las primeras 100 personas acceden al precio de lanzamiento. Después el precio sube a $27. Empezá hoy.
           </p>
-          <GoldBtn label="Quiero empezar ahora →" sub="$17 USD · Pago único · Acceso inmediato" onClick={buyNow} large />
+          <GoldBtn label="Quiero empezar ahora →" sub="$19.99 USD · Pago único · Acceso inmediato" onClick={buyNow} large />
           <div style={{ fontFamily: sf, fontSize: 12, color: textMuted }}>
             Sin mensualidades · Garantía 7 días · Hotmart
           </div>

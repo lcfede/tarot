@@ -143,19 +143,6 @@ function FaqItem({ q, a }: { q: string; a: string }) {
   );
 }
 
-function Section({ children, purple, tight }: { children: React.ReactNode; purple?: boolean; tight?: boolean }) {
-  return (
-    <section style={{
-      background: purple ? bgPurple : "transparent",
-      padding: tight ? "48px 24px" : "72px 24px",
-    }}>
-      <div style={{ maxWidth: 760, margin: "0 auto" }}>
-        {children}
-      </div>
-    </section>
-  );
-}
-
 function RevealSection({ children, purple, tight }: { children: React.ReactNode; purple?: boolean; tight?: boolean }) {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {

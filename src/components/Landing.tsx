@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 
 // ⚠️ Reemplazar con la URL real de Hotmart antes de publicar
@@ -43,6 +43,7 @@ function GoldBtn({ label, sub, onClick, large }: { label: string; sub?: string; 
         boxShadow: hover
           ? "0 6px 36px rgba(201,168,76,0.55)"
           : "0 4px 24px rgba(201,168,76,0.35)",
+        animation: hover ? "none" : "pulseGlow 2.5s ease-in-out infinite",
         transition: "all 0.2s",
         width: "100%",
         maxWidth: large ? 480 : 360,
@@ -155,6 +156,27 @@ function Section({ children, purple, tight }: { children: React.ReactNode; purpl
   );
 }
 
+function RevealSection({ children, purple, tight }: { children: React.ReactNode; purple?: boolean; tight?: boolean }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) { el.classList.add("visible"); obs.disconnect(); } },
+      { threshold: 0.1 }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+  return (
+    <section style={{ background: purple ? bgPurple : "transparent", padding: tight ? "48px 24px" : "72px 24px" }}>
+      <div ref={ref} className="reveal" style={{ maxWidth: 760, margin: "0 auto" }}>
+        {children}
+      </div>
+    </section>
+  );
+}
+
 export default function Landing() {
   const navigate = useNavigate();
   const buyNow = () => window.open(PURCHASE_URL, "_blank");
@@ -165,6 +187,54 @@ export default function Landing() {
         @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600;700&display=swap');
         * { box-sizing: border-box; }
         body { margin: 0; }
+
+        @keyframes fadeInUp {
+          from { opacity: 0; transform: translateY(28px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes floatY {
+          0%, 100% { transform: translate(-50%,-50%) translateY(0px); }
+          50%       { transform: translate(-50%,-50%) translateY(-24px); }
+        }
+        @keyframes pulseGlow {
+          0%, 100% { box-shadow: 0 4px 24px rgba(201,168,76,0.35); }
+          50%       { box-shadow: 0 4px 48px rgba(201,168,76,0.7); }
+        }
+        @keyframes twinkle {
+          0%, 100% { opacity: 0.07; }
+          50%       { opacity: 0.14; }
+        }
+        @keyframes dotPulse {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(201,168,76,0.6); }
+          50%       { box-shadow: 0 0 0 5px rgba(201,168,76,0); }
+        }
+        @keyframes revealUp {
+          from { opacity: 0; transform: translateY(36px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes mockupGlow {
+          0%, 100% { box-shadow: 0 24px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.04), 0 0 40px rgba(201,168,76,0.04); }
+          50%       { box-shadow: 0 24px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.04), 0 0 60px rgba(201,168,76,0.12); }
+        }
+
+        .hero-badge  { animation: fadeInUp 0.7s ease both; animation-delay: 0.1s; }
+        .hero-title  { animation: fadeInUp 0.7s ease both; animation-delay: 0.25s; }
+        .hero-sub    { animation: fadeInUp 0.7s ease both; animation-delay: 0.4s; }
+        .hero-checks { animation: fadeInUp 0.7s ease both; animation-delay: 0.55s; }
+        .hero-stars  { animation: fadeInUp 0.7s ease both; animation-delay: 0.65s; }
+        .hero-cta    { animation: fadeInUp 0.7s ease both; animation-delay: 0.75s; }
+        .hero-stats  { animation: fadeInUp 0.7s ease both; animation-delay: 0.9s; }
+
+        .reveal {
+          opacity: 0;
+          transform: translateY(36px);
+          transition: opacity 0.7s ease, transform 0.7s ease;
+        }
+        .reveal.visible {
+          opacity: 1;
+          transform: translateY(0);
+        }
+
         @media (max-width: 600px) {
           .hero-headline { font-size: 36px !important; }
           .feature-grid { grid-template-columns: 1fr !important; }
@@ -183,33 +253,35 @@ export default function Landing() {
         position: "relative", overflow: "hidden",
       }}>
         {/* Decorative stars */}
-        <div style={{ position: "absolute", inset: 0, pointerEvents: "none", opacity: 0.07,
+        <div style={{ position: "absolute", inset: 0, pointerEvents: "none",
           backgroundImage: "radial-gradient(circle,#c9a84c 1px,transparent 1px)",
           backgroundSize: "60px 60px",
+          animation: "twinkle 4s ease-in-out infinite",
         }} />
         {/* Glow */}
-        <div style={{ position: "absolute", top: "30%", left: "50%", transform: "translate(-50%,-50%)",
+        <div style={{ position: "absolute", top: "30%", left: "50%",
           width: 600, height: 600, borderRadius: "50%",
           background: "radial-gradient(circle,rgba(45,27,78,0.7) 0%,transparent 70%)",
           pointerEvents: "none",
+          animation: "floatY 8s ease-in-out infinite",
         }} />
 
         <div style={{ position: "relative", zIndex: 2, maxWidth: 680, width: "100%", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 20 }}>
 
           {/* Badge */}
-          <div style={{
+          <div className="hero-badge" style={{
             display: "inline-flex", alignItems: "center", gap: 8,
             padding: "6px 16px", borderRadius: 40,
             border: `1px solid rgba(201,168,76,0.3)`,
             background: "rgba(201,168,76,0.07)",
             fontFamily: sf, fontSize: 12, color: gold, letterSpacing: 1, textTransform: "uppercase",
           }}>
-            <span style={{ width: 6, height: 6, borderRadius: "50%", background: gold, display: "inline-block" }} />
+            <span style={{ width: 6, height: 6, borderRadius: "50%", background: gold, display: "inline-block", animation: "dotPulse 2s ease-in-out infinite" }} />
             Plataforma interactiva · Acceso inmediato
           </div>
 
           {/* Headline */}
-          <h1 className="hero-headline" style={{
+          <h1 className="hero-headline hero-title" style={{
             fontFamily: hf, fontSize: 52, fontWeight: 700,
             lineHeight: 1.1, margin: 0,
             color: goldLight,
@@ -220,23 +292,23 @@ export default function Landing() {
           </h1>
 
           {/* Sub */}
-          <p style={{ fontFamily: sf, fontSize: 17, color: textMuted, lineHeight: 1.7, margin: 0, maxWidth: 540 }}>
-            Sin experiencia previa. Sin dones especiales. Solo un método paso a paso con práctica interactiva y Tutor IA incluido — y acceso de por vida desde tu teléfono.
+          <p className="hero-sub" style={{ fontFamily: sf, fontSize: 17, color: textMuted, lineHeight: 1.7, margin: 0, maxWidth: 540 }}>
+            Sin experiencia previa. Sin dones especiales. Solo un método paso a paso con práctica interactiva y Oráculo incluido — y acceso de por vida desde tu teléfono.
           </p>
 
           {/* Bullets */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 8, width: "100%", maxWidth: 400, textAlign: "left" }}>
+          <div className="hero-checks" style={{ display: "flex", flexDirection: "column", gap: 8, width: "100%", maxWidth: 400, textAlign: "left" }}>
             <CheckItem>78 cartas Rider-Waite con imagen, significado y ejercicio</CheckItem>
             <CheckItem>31 lecciones progresivas en 10 módulos</CheckItem>
-            <CheckItem>Tutor IA para resolver todas tus dudas de tarot</CheckItem>
+            <CheckItem>Oráculo para resolver todas tus dudas de tarot</CheckItem>
             <CheckItem>Ebook "El Negocio del Tarot" para monetizar desde el día 1</CheckItem>
           </div>
 
           {/* Stars */}
-          <StarRow />
+          <div className="hero-stars"><StarRow /></div>
 
           {/* CTA */}
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, width: "100%" }}>
+          <div className="hero-cta" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, width: "100%" }}>
             <GoldBtn label="Quiero empezar ahora →" sub="Acceso inmediato por $19.99 USD · Pago único" onClick={buyNow} large />
             <div style={{ fontFamily: sf, fontSize: 12, color: textMuted }}>
               Sin mensualidades · Garantía de 7 días · Pago seguro via Hotmart
@@ -244,7 +316,7 @@ export default function Landing() {
           </div>
 
           {/* Stats row */}
-          <div style={{ display: "flex", gap: 32, justifyContent: "center", flexWrap: "wrap", marginTop: 8 }}>
+          <div className="hero-stats" style={{ display: "flex", gap: 32, justifyContent: "center", flexWrap: "wrap", marginTop: 8 }}>
             {[["78", "cartas interactivas"], ["31", "lecciones"], ["4", "tiradas de práctica"], ["IA", "tutor incluido"]].map(([n, l]) => (
               <div key={n} style={{ textAlign: "center" }}>
                 <div style={{ fontFamily: hf, fontSize: 28, color: gold, fontWeight: 700 }}>{n}</div>
@@ -266,7 +338,7 @@ export default function Landing() {
       </section>
 
       {/* ─── DOLOR ─── */}
-      <Section purple>
+      <RevealSection purple>
         <div style={{ textAlign: "center", marginBottom: 36 }}>
           <Divider />
           <h2 style={{ fontFamily: hf, fontSize: 36, color: goldLight, margin: "20px 0 8px" }}>
@@ -285,10 +357,10 @@ export default function Landing() {
             Si dijiste sí a alguna — este curso fue hecho para vos.
           </p>
         </div>
-      </Section>
+      </RevealSection>
 
       {/* ─── SOLUCIÓN ─── */}
-      <Section>
+      <RevealSection>
         <div style={{ textAlign: "center", marginBottom: 40 }}>
           <Divider />
           <div style={{ fontFamily: sf, fontSize: 12, color: gold, letterSpacing: 3, textTransform: "uppercase", margin: "16px 0 10px" }}>
@@ -298,71 +370,220 @@ export default function Landing() {
             Presentamos VisionTarot
           </h2>
           <p style={{ fontFamily: sf, fontSize: 16, color: textMuted, lineHeight: 1.8, maxWidth: 560, margin: "0 auto" }}>
-            La única plataforma interactiva que te lleva de cero a tarotista profesional — con las 78 cartas, un Tutor IA, tiradas de práctica y una guía completa de monetización incluida. Todo en un solo lugar, de por vida.
+            La única plataforma interactiva que te lleva de cero a tarotista profesional — con las 78 cartas, un Oráculo, tiradas de práctica y una guía completa de monetización incluida. Todo en un solo lugar, de por vida.
           </p>
         </div>
 
-        {/* Product mockup card */}
-        <div style={{
-          borderRadius: 12, overflow: "hidden",
-          border: "1px solid rgba(201,168,76,0.2)",
-          background: "linear-gradient(135deg,rgba(45,27,78,0.6),rgba(13,10,30,0.8))",
-          padding: "32px 28px",
-          marginBottom: 40,
-        }}>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 24, alignItems: "center", justifyContent: "center" }}>
-            {/* Mock UI */}
-            <div style={{ flex: "1 1 260px", maxWidth: 320 }}>
-              <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: 8, border: "1px solid rgba(201,168,76,0.12)", overflow: "hidden" }}>
-                {/* Header bar */}
-                <div style={{ background: "rgba(201,168,76,0.08)", padding: "10px 14px", display: "flex", alignItems: "center", gap: 8, borderBottom: "1px solid rgba(201,168,76,0.1)" }}>
-                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: "rgba(201,168,76,0.4)" }} />
-                  <div style={{ fontFamily: sf, fontSize: 11, color: gold, letterSpacing: 1 }}>VISIONTAROT · Módulo 3 — Arcanos Mayores</div>
-                </div>
-                <div style={{ padding: "16px 14px", display: "flex", flexDirection: "column", gap: 6 }}>
-                  {["El Loco", "El Mago", "La Sacerdotisa", "La Emperatriz", "El Emperador"].map((c, i) => (
-                    <div key={c} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <div style={{ width: 14, height: 14, borderRadius: "50%", flexShrink: 0,
-                        background: i < 3 ? "rgba(201,168,76,0.3)" : "rgba(255,255,255,0.06)",
-                        border: i < 3 ? `1px solid ${gold}` : "1px solid rgba(255,255,255,0.1)",
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                      }}>
-                        {i < 3 && <svg width="7" height="6" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke={gold} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>}
-                      </div>
-                      <div style={{ fontFamily: sf, fontSize: 12, color: i < 3 ? text : textMuted }}>{c}</div>
-                    </div>
-                  ))}
-                  <div style={{ marginTop: 4, height: 3, borderRadius: 2, background: "rgba(255,255,255,0.05)", overflow: "hidden" }}>
-                    <div style={{ width: "60%", height: "100%", background: `linear-gradient(90deg,${gold},#a07828)`, borderRadius: 2 }} />
-                  </div>
-                  <div style={{ fontFamily: sf, fontSize: 10, color: textMuted }}>Progreso: 60%</div>
-                </div>
+        {/* Platform mockup */}
+        <div style={{ marginBottom: 40 }}>
+          {/* Browser chrome */}
+          <div style={{
+            borderRadius: 12, overflow: "hidden",
+            border: "1px solid rgba(201,168,76,0.25)",
+            boxShadow: "0 24px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.04)",
+            animation: "mockupGlow 4s ease-in-out infinite",
+            background: "#0c0c16",
+          }}>
+            {/* Title bar */}
+            <div style={{
+              background: "#13111f",
+              padding: "10px 16px",
+              display: "flex", alignItems: "center", gap: 12,
+              borderBottom: "1px solid rgba(255,255,255,0.06)",
+            }}>
+              <div style={{ display: "flex", gap: 6 }}>
+                {["#ff5f57","#febc2e","#28c840"].map(c => (
+                  <div key={c} style={{ width: 10, height: 10, borderRadius: "50%", background: c, opacity: 0.8 }} />
+                ))}
+              </div>
+              {/* URL bar */}
+              <div style={{
+                flex: 1, maxWidth: 340, margin: "0 auto",
+                background: "rgba(255,255,255,0.05)", borderRadius: 6,
+                padding: "4px 12px", display: "flex", alignItems: "center", gap: 6,
+              }}>
+                <svg width="10" height="10" viewBox="0 0 16 16" fill="rgba(201,168,76,0.5)">
+                  <path d="M8 1a5 5 0 00-5 5v1H2a1 1 0 00-1 1v6a1 1 0 001 1h12a1 1 0 001-1V8a1 1 0 00-1-1h-1V6a5 5 0 00-5-5zm3 6H5V6a3 3 0 016 0v1z"/>
+                </svg>
+                <span style={{ fontFamily: sf, fontSize: 11, color: "rgba(255,255,255,0.35)", letterSpacing: 0.3 }}>
+                  visiontarot.com/curso
+                </span>
               </div>
             </div>
-            {/* Description */}
-            <div style={{ flex: "1 1 260px" }}>
-              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                {[
-                  ["🎓", "Plataforma completa", "Accedés desde visiontarot.com con tu usuario y contraseña, desde cualquier dispositivo."],
-                  ["🤖", "Tutor IA integrado", "Preguntale cualquier cosa sobre tarot. Responde en segundos, en español, con ejemplos prácticos."],
-                  ["📲", "Mobile friendly", "Diseñado para que aprendas desde el teléfono, en cualquier momento del día."],
-                ].map(([icon, title, desc]) => (
-                  <div key={title as string} style={{ display: "flex", gap: 12 }}>
-                    <div style={{ fontSize: 20, flexShrink: 0, marginTop: 2 }}>{icon}</div>
-                    <div>
-                      <div style={{ fontFamily: sf, fontSize: 14, color: goldLight, fontWeight: 600, marginBottom: 3 }}>{title}</div>
-                      <div style={{ fontFamily: sf, fontSize: 13, color: textMuted, lineHeight: 1.6 }}>{desc}</div>
+
+            {/* App layout */}
+            <div style={{ display: "flex", height: 420 }}>
+
+              {/* Sidebar */}
+              <div style={{
+                width: 220, flexShrink: 0,
+                background: "#0a0814",
+                borderRight: "1px solid rgba(255,255,255,0.05)",
+                display: "flex", flexDirection: "column", overflow: "hidden",
+              }}>
+                {/* Logo */}
+                <div style={{ padding: "14px 16px", borderBottom: "1px solid rgba(201,168,76,0.1)" }}>
+                  <div style={{ fontFamily: hf, fontSize: 15, color: gold, fontWeight: 700, letterSpacing: 1 }}>✦ VisionTarot</div>
+                  {/* Progress bar */}
+                  <div style={{ marginTop: 8 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                      <span style={{ fontFamily: sf, fontSize: 9, color: textMuted }}>Tu progreso</span>
+                      <span style={{ fontFamily: sf, fontSize: 9, color: gold }}>42%</span>
+                    </div>
+                    <div style={{ height: 3, borderRadius: 2, background: "rgba(255,255,255,0.06)" }}>
+                      <div style={{ width: "42%", height: "100%", background: `linear-gradient(90deg,${gold},#a07828)`, borderRadius: 2 }} />
                     </div>
                   </div>
-                ))}
+                </div>
+                {/* Modules */}
+                <div style={{ flex: 1, overflowY: "hidden", padding: "8px 0" }}>
+                  {[
+                    { mod: "Módulo 1", label: "Introducción al Tarot", done: true },
+                    { mod: "Módulo 2", label: "Arcanos Mayores I", done: true },
+                    { mod: "Módulo 3", label: "Arcanos Mayores II", active: true },
+                    { mod: "Módulo 4", label: "Arcanos Mayores III", done: false },
+                    { mod: "Módulo 5", label: "Palo de Copas", done: false },
+                    { mod: "Módulo 6", label: "Palo de Espadas", done: false },
+                  ].map(({ mod, label, done, active }: { mod: string; label: string; done?: boolean; active?: boolean }) => (
+                    <div key={mod} style={{
+                      padding: "7px 16px",
+                      background: active ? "rgba(201,168,76,0.08)" : "transparent",
+                      borderLeft: active ? `2px solid ${gold}` : "2px solid transparent",
+                      cursor: "pointer",
+                    }}>
+                      <div style={{ fontFamily: sf, fontSize: 9, color: done ? gold : active ? gold : "rgba(255,255,255,0.2)", letterSpacing: 0.5, textTransform: "uppercase", marginBottom: 1 }}>
+                        {done ? "✓ " : ""}{mod}
+                      </div>
+                      <div style={{ fontFamily: sf, fontSize: 11, color: active ? text : done ? "rgba(255,255,255,0.45)" : "rgba(255,255,255,0.25)", lineHeight: 1.3 }}>
+                        {label}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {/* AI chat button */}
+                <div style={{
+                  padding: "10px 16px", borderTop: "1px solid rgba(201,168,76,0.1)",
+                  display: "flex", alignItems: "center", gap: 8, cursor: "pointer",
+                  background: "rgba(201,168,76,0.05)",
+                }}>
+                  <div style={{ width: 24, height: 24, borderRadius: "50%", background: "rgba(201,168,76,0.15)", border: `1px solid rgba(201,168,76,0.3)`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <span style={{ fontSize: 11 }}>🔮</span>
+                  </div>
+                  <div>
+                    <div style={{ fontFamily: sf, fontSize: 10, color: gold, fontWeight: 600 }}>Oráculo</div>
+                    <div style={{ fontFamily: sf, fontSize: 9, color: textMuted }}>Preguntame cualquier cosa</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Main content */}
+              <div style={{ flex: 1, overflowY: "hidden", background: "#0c0c16", display: "flex", flexDirection: "column" }}>
+                {/* Lesson header */}
+                <div style={{ padding: "16px 24px 12px", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+                  <div style={{ fontFamily: sf, fontSize: 10, color: gold, letterSpacing: 2, textTransform: "uppercase", marginBottom: 4 }}>Módulo 3 · Lección 2</div>
+                  <div style={{ fontFamily: hf, fontSize: 20, color: goldLight, fontWeight: 600 }}>La Emperatriz</div>
+                </div>
+
+                {/* Lesson body */}
+                <div style={{ flex: 1, overflowY: "hidden", padding: "16px 24px", display: "flex", gap: 20 }}>
+                  {/* Card image */}
+                  <div style={{ width: 90, flexShrink: 0 }}>
+                    <img
+                      src="/cards/major/03_empress.jpg"
+                      alt="La Emperatriz"
+                      style={{
+                        width: "100%",
+                        borderRadius: 6,
+                        border: "1px solid rgba(201,168,76,0.3)",
+                        boxShadow: "0 4px 20px rgba(0,0,0,0.5)",
+                        display: "block",
+                      }}
+                    />
+                  </div>
+
+                  {/* Lesson text */}
+                  <div style={{ flex: 1 }}>
+                    {/* Keywords */}
+                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
+                      {["Abundancia", "Fertilidad", "Naturaleza", "Creatividad"].map(k => (
+                        <span key={k} style={{ fontFamily: sf, fontSize: 9, color: gold, padding: "2px 7px", borderRadius: 20, background: "rgba(201,168,76,0.1)", border: "1px solid rgba(201,168,76,0.2)" }}>{k}</span>
+                      ))}
+                    </div>
+                    {/* Text lines */}
+                    {[100, 100, 85, 100, 70].map((w, i) => (
+                      <div key={i} style={{ height: 8, borderRadius: 4, background: "rgba(255,255,255,0.07)", marginBottom: 6, width: `${w}%` }} />
+                    ))}
+                    {/* Tip box */}
+                    <div style={{ marginTop: 10, padding: "8px 12px", borderRadius: 6, background: "rgba(201,168,76,0.06)", borderLeft: `3px solid ${gold}` }}>
+                      <div style={{ fontFamily: sf, fontSize: 9, color: gold, fontWeight: 600, marginBottom: 4 }}>✦ Reflexión</div>
+                      {[100, 90].map((w, i) => (
+                        <div key={i} style={{ height: 7, borderRadius: 4, background: "rgba(201,168,76,0.15)", marginBottom: 4, width: `${w}%` }} />
+                      ))}
+                    </div>
+                    {/* Next button */}
+                    <div style={{ marginTop: 14, display: "flex", alignItems: "center", gap: 8 }}>
+                      <div style={{ padding: "6px 16px", borderRadius: 5, background: `linear-gradient(135deg,${gold},#a07828)`, display: "inline-block" }}>
+                        <span style={{ fontFamily: sf, fontSize: 10, color: "#0a0612", fontWeight: 700 }}>Continuar →</span>
+                      </div>
+                      <span style={{ fontFamily: sf, fontSize: 9, color: textMuted }}>Lección 3 de 8</span>
+                    </div>
+                  </div>
+
+                  {/* AI chat panel */}
+                  <div style={{
+                    width: 160, flexShrink: 0,
+                    background: "#0a0814",
+                    border: "1px solid rgba(201,168,76,0.1)",
+                    borderRadius: 8, display: "flex", flexDirection: "column", overflow: "hidden",
+                  }}>
+                    <div style={{ padding: "8px 10px", borderBottom: "1px solid rgba(201,168,76,0.1)", display: "flex", alignItems: "center", gap: 6 }}>
+                      <span style={{ fontSize: 10 }}>🔮</span>
+                      <span style={{ fontFamily: sf, fontSize: 9, color: gold, fontWeight: 600 }}>Oráculo</span>
+                    </div>
+                    <div style={{ flex: 1, padding: "8px 10px", display: "flex", flexDirection: "column", gap: 6 }}>
+                      {/* AI message */}
+                      <div style={{ padding: "6px 8px", borderRadius: 6, background: "rgba(201,168,76,0.07)", border: "1px solid rgba(201,168,76,0.12)" }}>
+                        {[100, 85, 70].map((w, i) => (
+                          <div key={i} style={{ height: 6, borderRadius: 3, background: "rgba(201,168,76,0.2)", marginBottom: 3, width: `${w}%` }} />
+                        ))}
+                      </div>
+                      {/* User message */}
+                      <div style={{ padding: "6px 8px", borderRadius: 6, background: "rgba(255,255,255,0.04)", alignSelf: "flex-end", width: "85%" }}>
+                        {[100, 60].map((w, i) => (
+                          <div key={i} style={{ height: 6, borderRadius: 3, background: "rgba(255,255,255,0.1)", marginBottom: 3, width: `${w}%` }} />
+                        ))}
+                      </div>
+                      {/* AI typing */}
+                      <div style={{ padding: "6px 8px", borderRadius: 6, background: "rgba(201,168,76,0.07)", border: "1px solid rgba(201,168,76,0.12)" }}>
+                        <div style={{ display: "flex", gap: 3, alignItems: "center" }}>
+                          {[0,1,2].map(i => (
+                            <div key={i} style={{ width: 4, height: 4, borderRadius: "50%", background: gold, opacity: 0.5 + i * 0.25 }} />
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                    {/* Input */}
+                    <div style={{ padding: "6px 10px", borderTop: "1px solid rgba(201,168,76,0.1)" }}>
+                      <div style={{ background: "rgba(255,255,255,0.05)", borderRadius: 4, padding: "4px 8px", display: "flex", alignItems: "center", gap: 4 }}>
+                        <span style={{ fontFamily: sf, fontSize: 9, color: "rgba(255,255,255,0.2)", flex: 1 }}>Escribí tu pregunta...</span>
+                        <svg width="10" height="10" viewBox="0 0 16 16" fill={gold} opacity={0.6}>
+                          <path d="M2 14l12-6L2 2v4l8 2-8 2v4z"/>
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
+          <p style={{ fontFamily: sf, fontSize: 12, color: textMuted, textAlign: "center", marginTop: 12 }}>
+            Así se ve la plataforma — accedés desde cualquier dispositivo, a tu ritmo.
+          </p>
         </div>
-      </Section>
+      </RevealSection>
 
       {/* ─── QUÉ INCLUYE ─── */}
-      <Section purple tight>
+      <RevealSection purple tight>
         <div style={{ textAlign: "center", marginBottom: 36 }}>
           <Divider />
           <h2 style={{ fontFamily: hf, fontSize: 36, color: goldLight, margin: "20px 0 8px" }}>Todo lo que recibís</h2>
@@ -372,17 +593,17 @@ export default function Landing() {
           <FeatureCard icon="🃏" title="78 cartas interactivas" desc="Cada carta con imagen real Rider-Waite, significado detallado, palabras clave, significado invertido y ejercicio de reflexión." />
           <FeatureCard icon="📚" title="31 lecciones en 10 módulos" desc="Desde '¿Qué es el tarot?' hasta 'Próximos pasos para monetizar'. Progresivo y ordenado." />
           <FeatureCard icon="🔮" title="4 tiradas de práctica" desc="Sí/No, Pasado-Presente-Futuro, Cruz Simple y El Amor. Las 78 cartas se barajan en tiempo real." />
-          <FeatureCard icon="🤖" title="Tutor IA ilimitado" desc="Un chat con inteligencia artificial especializada en tarot. Preguntale cualquier duda y te responde al instante." />
+          <FeatureCard icon="🔮" title="Oráculo ilimitado" desc="Un chat con inteligencia artificial especializada en tarot. Preguntale cualquier duda y te responde al instante." />
           <FeatureCard icon="✅" title="Tests con feedback" desc="Al final de cada módulo, preguntas de opción múltiple con corrección inmediata y posibilidad de reintentar." />
           <FeatureCard icon="💼" title="Ebook El Negocio del Tarot" desc="~40 páginas con la matemática de los $500/mes, 5 canales de clientes, protocolo profesional y plantillas copy-paste." />
           <FeatureCard icon="📖" title="Ebook Las 78 Cartas" desc="PDF de referencia offline con imagen, significado e invertida de cada carta. Para imprimir o tener en el teléfono." />
           <FeatureCard icon="🏆" title="Certificado de finalización" desc="Descargable al completar el 100% del curso. Respaldo de tu aprendizaje." />
           <FeatureCard icon="♾️" title="Acceso de por vida" desc="Sin mensualidades. Pagás una vez y es tuyo para siempre. Accedés cuando quieras." />
         </div>
-      </Section>
+      </RevealSection>
 
       {/* ─── STACK DE VALOR + PRECIO ─── */}
-      <Section>
+      <RevealSection>
         <div style={{ textAlign: "center", marginBottom: 36 }}>
           <Divider />
           <h2 style={{ fontFamily: hf, fontSize: 36, color: goldLight, margin: "20px 0 8px" }}>
@@ -397,7 +618,7 @@ export default function Landing() {
         }}>
           {[
             ["Plataforma Interactiva", "31 lecciones, 78 cartas, tiradas, tests, progreso", "$29"],
-            ["Tutor IA", "Chat ilimitado con IA especializada en tarot", "$19"],
+            ["Oráculo", "Chat ilimitado con IA especializada en tarot", "$19"],
             ["Ebook El Negocio del Tarot", "Guía de monetización + plantillas listas", "$14"],
             ["Ebook Las 78 Cartas", "Referencia PDF offline de todas las cartas", "$12"],
             ["Acceso de por vida", "Sin mensualidades, tuyo para siempre", "$15"],
@@ -449,10 +670,10 @@ export default function Landing() {
             <span style={{ fontFamily: sf, fontSize: 12, color: textMuted }}>Pago 100% seguro procesado por Hotmart · Aceptamos todas las tarjetas y opciones locales LATAM</span>
           </div>
         </div>
-      </Section>
+      </RevealSection>
 
       {/* ─── PRUEBA SOCIAL / WHO ─── */}
-      <Section purple tight>
+      <RevealSection purple tight>
         <div style={{ textAlign: "center", marginBottom: 36 }}>
           <Divider />
           <h2 style={{ fontFamily: hf, fontSize: 36, color: goldLight, margin: "20px 0 8px" }}>
@@ -476,10 +697,10 @@ export default function Landing() {
             </div>
           ))}
         </div>
-      </Section>
+      </RevealSection>
 
       {/* ─── CÓMO FUNCIONA / HOW ─── */}
-      <Section>
+      <RevealSection>
         <div style={{ textAlign: "center", marginBottom: 36 }}>
           <Divider />
           <h2 style={{ fontFamily: hf, fontSize: 36, color: goldLight, margin: "20px 0 8px" }}>Cómo empezás</h2>
@@ -488,7 +709,7 @@ export default function Landing() {
           {[
             ["1", "Comprás el acceso", "Clic en el botón, elegís tu método de pago y listo. Hotmart acepta tarjetas y opciones locales de cada país.", "💳"],
             ["2", "Accedés en 2 minutos", "Recibís tus credenciales por email. Entrás a visiontarot.com/curso desde tu teléfono o computadora.", "🔑"],
-            ["3", "Aprendés a tu ritmo", "Seguís las lecciones en orden, practicás con las tiradas y consultás al Tutor IA cuando tenés dudas.", "📲"],
+            ["3", "Aprendés a tu ritmo", "Seguís las lecciones en orden, practicás con las tiradas y consultás al Oráculo cuando tenés dudas.", "📲"],
           ].map(([num, title, desc, icon], i) => (
             <div key={num} style={{ flex: 1, maxWidth: 240, textAlign: "center", padding: "0 20px", position: "relative" }}>
               {i < 2 && (
@@ -511,10 +732,10 @@ export default function Landing() {
             </div>
           ))}
         </div>
-      </Section>
+      </RevealSection>
 
       {/* ─── GARANTÍA ─── */}
-      <Section purple tight>
+      <RevealSection purple tight>
         <div style={{
           display: "flex", gap: 20, alignItems: "center", flexWrap: "wrap",
           justifyContent: "center", textAlign: "center",
@@ -529,10 +750,10 @@ export default function Landing() {
             </p>
           </div>
         </div>
-      </Section>
+      </RevealSection>
 
       {/* ─── FAQ ─── */}
-      <Section tight>
+      <RevealSection tight>
         <div style={{ textAlign: "center", marginBottom: 32 }}>
           <Divider />
           <h2 style={{ fontFamily: hf, fontSize: 36, color: goldLight, margin: "20px 0 8px" }}>Preguntas frecuentes</h2>
@@ -563,10 +784,10 @@ export default function Landing() {
             a="Inmediatamente después de tu pago recibís un email con tus credenciales. Entrás a visiontarot.com/curso, ingresás con tu usuario y contraseña, y ya podés empezar. Todo desde el teléfono o la computadora."
           />
         </div>
-      </Section>
+      </RevealSection>
 
       {/* ─── CTA FINAL ─── */}
-      <Section purple>
+      <RevealSection purple>
         <div style={{ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 20 }}>
           <Divider />
           <h2 style={{ fontFamily: hf, fontSize: 40, color: goldLight, margin: "16px 0 0" }}>
@@ -588,7 +809,7 @@ export default function Landing() {
             </button>
           </div>
         </div>
-      </Section>
+      </RevealSection>
 
       {/* ─── FOOTER ─── */}
       <footer style={{ padding: "24px", textAlign: "center", borderTop: "1px solid rgba(201,168,76,0.1)" }}>

@@ -4,6 +4,7 @@ import { COURSE } from "./data/course";
 import { sf } from "./constants";
 import { supabase } from "./lib/supabase";
 import Landing from "./components/Landing";
+import Landing2 from "./components/Landing2";
 import Login from "./components/Login";
 import ForgotPassword from "./components/ForgotPassword";
 import ResetPassword from "./components/ResetPassword";
@@ -200,6 +201,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={<Landing />} />
+      <Route path="/landing2" element={<Landing2 />} />
       <Route path="/login" element={<Login />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />

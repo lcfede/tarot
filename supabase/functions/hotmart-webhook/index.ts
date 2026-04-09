@@ -1,3 +1,30 @@
+async function logPurchaseError(
+  supabaseUrl: string,
+  serviceKey: string,
+  email: string | undefined,
+  transactionId: string | undefined,
+  reason: string,
+) {
+  try {
+    await fetch(`${supabaseUrl}/rest/v1/purchase_errors`, {
+      method: "POST",
+      headers: {
+        "apikey": serviceKey,
+        "Authorization": `Bearer ${serviceKey}`,
+        "Content-Type": "application/json",
+        "Prefer": "return=minimal",
+      },
+      body: JSON.stringify({
+        email: email ?? null,
+        hotmart_transaction_id: transactionId ?? null,
+        error_reason: reason,
+      }),
+    });
+  } catch (e) {
+    console.error("Failed to log purchase error:", e);
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method !== "POST") {
     return new Response("Method not allowed", { status: 405 });
@@ -10,9 +37,18 @@ Deno.serve(async (req) => {
     return new Response("Invalid JSON", { status: 400 });
   }
 
-  // Verify Hotmart hottok
+  // Verify Hotmart hottok — busca en todas las ubicaciones posibles
   const expectedHottok = Deno.env.get("HOTMART_HOTTOK");
-  if (!expectedHottok || body.hottok !== expectedHottok) {
+  const receivedHottok =
+    body.hottok ??
+    (body.data as Record<string, unknown> | undefined)?.hottok ??
+    req.headers.get("x-hotmart-hottok") ??
+    req.headers.get("hottok");
+
+  console.log("hottok received:", receivedHottok ? "present" : "missing");
+  console.log("hottok match:", receivedHottok === expectedHottok);
+
+  if (!expectedHottok || receivedHottok !== expectedHottok) {
     return new Response("Unauthorized", { status: 401 });
   }
 
@@ -29,12 +65,15 @@ Deno.serve(async (req) => {
   }
 
   const email = buyer?.email as string | undefined;
-  if (!email) {
-    return new Response("Missing buyer email", { status: 400 });
-  }
+  const transactionId = purchase?.transaction as string | undefined;
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+  if (!email) {
+    await logPurchaseError(supabaseUrl, serviceKey, undefined, transactionId, "Missing buyer email in webhook payload");
+    return new Response("Missing buyer email", { status: 400 });
+  }
 
   // inviteUserByEmail creates the user and sends them an email
   // to set their password. If the user already exists it returns 422.
@@ -47,7 +86,7 @@ Deno.serve(async (req) => {
     },
     body: JSON.stringify({
       email,
-      data: { hotmart_purchase_id: purchase?.transaction },
+      data: { hotmart_purchase_id: transactionId },
       redirect_to: "https://visiontarot.com/reset-password",
     }),
   });
@@ -61,6 +100,7 @@ Deno.serve(async (req) => {
     }
     const err = await res.json();
     console.error("Error inviting user:", err);
+    await logPurchaseError(supabaseUrl, serviceKey, email, transactionId, `Invite API error ${res.status}: ${JSON.stringify(err)}`);
     return new Response(JSON.stringify({ error: err }), {
       headers: { "Content-Type": "application/json" },
       status: 500,

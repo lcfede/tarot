@@ -18,6 +18,15 @@ interface OracleDoc {
   created_at: string;
 }
 
+interface PurchaseError {
+  id: string;
+  email: string | null;
+  hotmart_transaction_id: string | null;
+  error_reason: string;
+  resolved: boolean;
+  created_at: string;
+}
+
 interface UserRow {
   id: string;
   email: string;
@@ -170,6 +179,8 @@ export default function Admin() {
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [userUsagePage, setUserUsagePage] = useState(0);
   const [oracleTab, setOracleTab] = useState<"stats" | "contenido">("stats");
+  const [purchaseErrors, setPurchaseErrors] = useState<PurchaseError[]>([]);
+  const [resendingId, setResendingId] = useState<string | null>(null);
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -342,6 +353,7 @@ export default function Admin() {
       if (!isAdmin) { setView("login"); return; }
       setView("panel");
       loadUsers();
+      loadPurchaseErrors();
     });
   }, []);
 
@@ -387,6 +399,44 @@ export default function Admin() {
   const sendReset = async (email: string) => {
     await supabase.auth.resetPasswordForEmail(email, { redirectTo: "https://visiontarot.com/reset-password" });
     showToast("Email de reseteo enviado a " + email);
+  };
+
+  const loadPurchaseErrors = async () => {
+    const { data } = await supabase
+      .from("purchase_errors")
+      .select("*")
+      .eq("resolved", false)
+      .order("created_at", { ascending: false });
+    if (data) setPurchaseErrors(data as PurchaseError[]);
+  };
+
+  const resendInvite = async (email: string, errorId?: string) => {
+    setResendingId(errorId ?? email);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-resend-invite`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${session?.access_token}`,
+          },
+          body: JSON.stringify({ email, error_id: errorId }),
+        }
+      );
+      const json = await res.json();
+      if (!res.ok) throw new Error(JSON.stringify(json));
+      if (errorId) setPurchaseErrors(errs => errs.filter(e => e.id !== errorId));
+      showToast(
+        json.action === "invited"
+          ? `Invitación enviada a ${email}`
+          : `Email de acceso enviado a ${email}`
+      );
+    } catch (e) {
+      showToast("Error al reenviar: " + String(e));
+    }
+    setResendingId(null);
   };
 
   if (view === "loading") return null;
@@ -988,6 +1038,45 @@ export default function Admin() {
           /* ── USUARIOS ── */
           <div className="adm-users-layout">
             <div style={{ flex: 1, minWidth: 0 }}>
+              {/* Purchase errors */}
+              {purchaseErrors.length > 0 && (
+                <div style={{ ...card, borderColor: "#fecaca", background: "#fff5f5", marginBottom: 20 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+                    <span style={{ fontSize: 16 }}>⚠️</span>
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: 14, color: "#dc2626" }}>
+                        {purchaseErrors.length} compra{purchaseErrors.length !== 1 ? "s" : ""} sin acceso
+                      </div>
+                      <div style={{ fontSize: 12, color: "#9ca3af" }}>Estos compradores no recibieron su acceso correctamente</div>
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    {purchaseErrors.map(err => (
+                      <div key={err.id} style={{ background: "#fff", border: "1px solid #fecaca", borderRadius: 8, padding: "12px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" as const }}>
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontWeight: 600, fontSize: 13, color: "#1e293b", wordBreak: "break-all" as const }}>
+                            {err.email ?? "Sin email"}
+                          </div>
+                          <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 2 }}>
+                            {err.hotmart_transaction_id ? `Transacción: ${err.hotmart_transaction_id} · ` : ""}
+                            {fmtDt(err.created_at)}
+                          </div>
+                          <div style={{ fontSize: 11, color: "#ef4444", marginTop: 2 }}>{err.error_reason}</div>
+                        </div>
+                        {err.email && (
+                          <button
+                            onClick={() => void resendInvite(err.email!, err.id)}
+                            disabled={resendingId === err.id}
+                            style={{ padding: "7px 16px", borderRadius: 6, border: "none", background: "#dc2626", color: "#fff", fontSize: 12, fontWeight: 600, cursor: resendingId === err.id ? "not-allowed" : "pointer", opacity: resendingId === err.id ? 0.6 : 1, flexShrink: 0 }}
+                          >
+                            {resendingId === err.id ? "Enviando..." : "Reenviar acceso"}
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
               {/* Search + Filters */}
               <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 16 }}>
                 {/* Search bar */}
@@ -1157,6 +1246,13 @@ export default function Admin() {
                     style={{ padding: "9px 0", borderRadius: 6, border: "1px solid " + P, cursor: "pointer", fontWeight: 600, fontSize: 13, background: PL, color: P }}
                   >
                     Enviar reseteo de contraseña
+                  </button>
+                  <button
+                    onClick={() => void resendInvite(selected.email)}
+                    disabled={resendingId === selected.email}
+                    style={{ padding: "9px 0", borderRadius: 6, border: "1px solid #16a34a", cursor: resendingId === selected.email ? "not-allowed" : "pointer", fontWeight: 600, fontSize: 13, background: "#dcfce7", color: "#16a34a", opacity: resendingId === selected.email ? 0.6 : 1 }}
+                  >
+                    {resendingId === selected.email ? "Enviando..." : selected.last_sign_in_at ? "Reenviar acceso" : "Reenviar invitación"}
                   </button>
                 </div>
               </div>

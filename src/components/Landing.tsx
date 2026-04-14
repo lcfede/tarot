@@ -329,7 +329,7 @@ export default function Landing() {
         <div style={{ textAlign: "center", marginBottom: 36 }}>
           <Divider />
           <h2 style={{ fontFamily: hf, fontSize: 36, color: goldLight, margin: "20px 0 8px" }}>
-            ¿Te identificás con alguna de estas situaciones?
+            ¿Te identificas con alguna de estas situaciones?
           </h2>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -341,7 +341,7 @@ export default function Landing() {
         </div>
         <div style={{ textAlign: "center", marginTop: 32 }}>
           <p style={{ fontFamily: hf, fontSize: 22, color: gold, fontStyle: "italic" }}>
-            Si dijiste sí a alguna — este curso fue hecho para vos.
+            Si dijiste sí a alguna — este curso fue hecho para ti.
           </p>
         </div>
       </RevealSection>
@@ -552,7 +552,7 @@ export default function Landing() {
                     {/* Input */}
                     <div style={{ padding: "6px 10px", borderTop: "1px solid rgba(201,168,76,0.1)" }}>
                       <div style={{ background: "rgba(255,255,255,0.05)", borderRadius: 4, padding: "4px 8px", display: "flex", alignItems: "center", gap: 4 }}>
-                        <span style={{ fontFamily: sf, fontSize: 9, color: "rgba(255,255,255,0.2)", flex: 1 }}>Escribí tu pregunta...</span>
+                        <span style={{ fontFamily: sf, fontSize: 9, color: "rgba(255,255,255,0.2)", flex: 1 }}>Escribe tu pregunta...</span>
                         <svg width="10" height="10" viewBox="0 0 16 16" fill={gold} opacity={0.6}>
                           <path d="M2 14l12-6L2 2v4l8 2-8 2v4z"/>
                         </svg>
@@ -564,7 +564,7 @@ export default function Landing() {
             </div>
           </div>
           <p style={{ fontFamily: sf, fontSize: 12, color: textMuted, textAlign: "center", marginTop: 12 }}>
-            Así se ve la plataforma — accedés desde cualquier dispositivo, a tu ritmo.
+            Así se ve la plataforma — accede desde cualquier dispositivo, a tu ritmo.
           </p>
         </div>
       </RevealSection>
@@ -573,7 +573,7 @@ export default function Landing() {
       <RevealSection purple tight>
         <div style={{ textAlign: "center", marginBottom: 36 }}>
           <Divider />
-          <h2 style={{ fontFamily: hf, fontSize: 36, color: goldLight, margin: "20px 0 8px" }}>Todo lo que recibís</h2>
+          <h2 style={{ fontFamily: hf, fontSize: 36, color: goldLight, margin: "20px 0 8px" }}>Todo lo que recibes</h2>
           <p style={{ fontFamily: sf, fontSize: 15, color: textMuted, margin: 0 }}>Un paquete completo para aprender y monetizar el tarot desde cero</p>
         </div>
         <div className="feature-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
@@ -666,7 +666,7 @@ export default function Landing() {
           <h2 style={{ fontFamily: hf, fontSize: 36, color: goldLight, margin: "20px 0 8px" }}>
             El mercado del tarot no para de crecer
           </h2>
-          <p style={{ fontFamily: sf, fontSize: 14, color: textMuted }}>Y vos podés ser parte de él desde hoy</p>
+          <p style={{ fontFamily: sf, fontSize: 14, color: textMuted }}>Y tú puedes ser parte de él desde hoy</p>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 16 }}>
           {[
@@ -690,13 +690,13 @@ export default function Landing() {
       <RevealSection>
         <div style={{ textAlign: "center", marginBottom: 36 }}>
           <Divider />
-          <h2 style={{ fontFamily: hf, fontSize: 36, color: goldLight, margin: "20px 0 8px" }}>Cómo empezás</h2>
+          <h2 style={{ fontFamily: hf, fontSize: 36, color: goldLight, margin: "20px 0 8px" }}>Cómo empezar</h2>
         </div>
         <div className="step-row" style={{ display: "flex", gap: 0, alignItems: "flex-start", justifyContent: "center" }}>
           {[
-            ["1", "Comprás el acceso", "Clic en el botón, elegís tu método de pago y listo. Hotmart acepta tarjetas y opciones locales de cada país.", "💳"],
-            ["2", "Accedés en 2 minutos", "Recibís tus credenciales por email. Entrás a visiontarot.com/curso desde tu teléfono o computadora.", "🔑"],
-            ["3", "Aprendés a tu ritmo", "Seguís las lecciones en orden, practicás con las tiradas y consultás al Oráculo cuando tenés dudas.", "📲"],
+            ["1", "Compra el acceso", "Clic en el botón, elige tu método de pago y listo. Hotmart acepta tarjetas y opciones locales de cada país.", "💳"],
+            ["2", "Accede en 2 minutos", "Recibes tus credenciales por email. Entra a visiontarot.com/curso desde tu teléfono o computadora.", "🔑"],
+            ["3", "Aprende a tu ritmo", "Sigue las lecciones en orden, practica con las tiradas y consulta al Oráculo cuando tengas dudas.", "📲"],
           ].map(([num, title, desc, icon], i) => (
             <div key={num} style={{ flex: 1, maxWidth: 240, textAlign: "center", padding: "0 20px", position: "relative" }}>
               {i < 2 && (
@@ -733,7 +733,7 @@ export default function Landing() {
               Garantía de 7 días sin preguntas
             </h2>
             <p style={{ fontFamily: sf, fontSize: 15, color: textMuted, lineHeight: 1.7, margin: 0 }}>
-              Si comprás y por cualquier razón no te convence, Hotmart te devuelve el 100% de tu dinero en los primeros 7 días. Sin formularios complicados, sin excusas. El riesgo es nuestro.
+              Si compras y por cualquier razón no te convence, Hotmart te devuelve el 100% de tu dinero en los primeros 7 días. Sin formularios complicados, sin excusas. El riesgo es nuestro.
             </p>
           </div>
         </div>
@@ -752,7 +752,7 @@ export default function Landing() {
           />
           <FaqItem
             q="¿Cuánto tiempo necesito por día?"
-            a="Cada lección toma entre 5 y 10 minutos. Podés avanzar a tu propio ritmo, desde el teléfono, cuando tengas tiempo. No hay clases en vivo ni horarios. El acceso es de por vida."
+            a="Cada lección toma entre 5 y 10 minutos. Puedes avanzar a tu propio ritmo, desde el teléfono, cuando tengas tiempo. No hay clases en vivo ni horarios. El acceso es de por vida."
           />
           <FaqItem
             q="¿Ya hay mucha información gratis en YouTube, por qué pagar?"
@@ -781,7 +781,7 @@ export default function Landing() {
             Tu baraja está esperando.<br />Tu negocio también.
           </h2>
           <p style={{ fontFamily: sf, fontSize: 16, color: textMuted, lineHeight: 1.7, maxWidth: 480, margin: 0 }}>
-            Las primeras 100 personas acceden al precio de lanzamiento. Después el precio sube a $27. Empezá hoy.
+            Las primeras 100 personas acceden al precio de lanzamiento. Después el precio sube a $27. Empieza hoy.
           </p>
           <GoldBtn label="Quiero empezar ahora →" sub="$19.99 USD · Pago único · Acceso inmediato" onClick={buyNow} large />
           <div style={{ fontFamily: sf, fontSize: 12, color: textMuted }}>

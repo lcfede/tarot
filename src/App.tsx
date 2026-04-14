@@ -16,6 +16,7 @@ import Lesson from "./components/Lesson";
 import ChatBot from "./components/ChatBot";
 import Admin from "./components/Admin";
 import Profile from "./components/Profile";
+import Ad from "./components/Ad";
 
 function CoursePage() {
   const navigate = useNavigate();
@@ -92,7 +93,7 @@ function CoursePage() {
   if (!started) return <Cover onStart={() => setStarted(true)} onBack={() => navigate("/")} />;
 
   return (
-    <div style={{ display: "flex", height: "100vh", background: "#0d0a1e", fontFamily: sf, color: "#e8dcc8", overflow: "hidden" }}>
+    <div style={{ display: "flex", height: "100dvh", background: "#0d0a1e", fontFamily: sf, color: "#e8dcc8", overflow: "hidden" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap');
         ::-webkit-scrollbar { width: 4px; }
@@ -219,6 +220,7 @@ export default function App() {
       <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
       <Route path="/admin/*" element={<Admin />} />
       <Route path="/perfil" element={<Profile />} />
+      <Route path="/ad" element={<Ad />} />
     </Routes>
   );
 }

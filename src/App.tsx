@@ -16,7 +16,8 @@ import Lesson from "./components/Lesson";
 import ChatBot from "./components/ChatBot";
 import Admin from "./components/Admin";
 import Profile from "./components/Profile";
-import Ad from "./components/Ad";
+import Ad from "./components/creatives/Ad";
+import AdCards from "./components/creatives/AdCards";
 
 function CoursePage() {
   const navigate = useNavigate();
@@ -221,6 +222,7 @@ export default function App() {
       <Route path="/admin/*" element={<Admin />} />
       <Route path="/perfil" element={<Profile />} />
       <Route path="/ad" element={<Ad />} />
+      <Route path="/ad-cards" element={<AdCards />} />
     </Routes>
   );
 }

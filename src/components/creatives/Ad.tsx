@@ -71,6 +71,7 @@ export default function Ad() {
         @keyframes twinkle1 { 0%,100%{opacity:.15} 50%{opacity:.8}  }
         @keyframes twinkle2 { 0%,100%{opacity:.05} 50%{opacity:.55} }
         @keyframes twinkle3 { 0%,100%{opacity:.25} 50%{opacity:.9}  }
+        @keyframes twinkle4 { 0%,100%{opacity:.1}  50%{opacity:.7}  }
 
         .ad-float  { animation: float 4s ease-in-out infinite; }
         .ad-cta    { animation: pulseGlow 2.2s ease-in-out infinite; }
@@ -132,36 +133,57 @@ export default function Ad() {
         pointerEvents:"none",
       }}/>
 
-      {/* Estrellas SVG */}
+      {/* Estrellas SVG — solo en bordes y esquinas, lejos del contenido central */}
       <svg style={{position:"absolute",inset:0,width:"100%",height:"100%",pointerEvents:"none"}} xmlns="http://www.w3.org/2000/svg">
+        {/* Esquina superior izquierda */}
         <g className="star-1">
-          <circle cx="15%"  cy="10%" r="2"   fill="#c9a84c"/>
-          <circle cx="78%"  cy="7%"  r="1.6" fill="#c9a84c"/>
-          <circle cx="52%"  cy="94%" r="1.8" fill="#c9a84c"/>
-          <circle cx="88%"  cy="55%" r="1.5" fill="#c9a84c"/>
+          <circle cx="5%"  cy="3%"  r="2"   fill="#f5e6a3"/>
+          <circle cx="12%" cy="8%"  r="1.4" fill="#c9a84c"/>
+          <circle cx="3%"  cy="11%" r="1"   fill="#c9a84c"/>
+          <circle cx="18%" cy="5%"  r=".8"  fill="#e8d080"/>
+          <circle cx="8%"  cy="16%" r="1.2" fill="#c9a84c"/>
         </g>
+        {/* Esquina superior derecha */}
         <g className="star-2">
-          <circle cx="90%"  cy="15%" r="1.2" fill="#e8d080"/>
-          <circle cx="8%"   cy="42%" r="1.3" fill="#e8d080"/>
-          <circle cx="68%"  cy="88%" r="1.1" fill="#e8d080"/>
-          <circle cx="30%"  cy="80%" r="1.4" fill="#e8d080"/>
-          <circle cx="44%"  cy="4%"  r="1"   fill="#e8d080"/>
+          <circle cx="95%" cy="3%"  r="2"   fill="#f5e6a3"/>
+          <circle cx="88%" cy="8%"  r="1.4" fill="#c9a84c"/>
+          <circle cx="97%" cy="11%" r="1"   fill="#c9a84c"/>
+          <circle cx="82%" cy="5%"  r=".8"  fill="#e8d080"/>
+          <circle cx="92%" cy="16%" r="1.2" fill="#c9a84c"/>
         </g>
+        {/* Esquina inferior izquierda */}
         <g className="star-3">
-          <circle cx="22%"  cy="68%" r="2.2" fill="#f5e6a3"/>
-          <circle cx="82%"  cy="30%" r="2"   fill="#f5e6a3"/>
-          <circle cx="60%"  cy="18%" r="1.8" fill="#f5e6a3"/>
+          <circle cx="5%"  cy="97%" r="2"   fill="#f5e6a3"/>
+          <circle cx="12%" cy="92%" r="1.4" fill="#c9a84c"/>
+          <circle cx="3%"  cy="88%" r="1"   fill="#c9a84c"/>
+          <circle cx="18%" cy="95%" r=".8"  fill="#e8d080"/>
+          <circle cx="8%"  cy="84%" r="1.2" fill="#c9a84c"/>
         </g>
+        {/* Esquina inferior derecha */}
         <g className="star-4">
-          <circle cx="5%"   cy="22%" r="1.5" fill="#c9a84c"/>
-          <circle cx="95%"  cy="72%" r="1.3" fill="#c9a84c"/>
-          <circle cx="38%"  cy="96%" r="1.6" fill="#c9a84c"/>
-          <circle cx="73%"  cy="3%"  r="1.4" fill="#c9a84c"/>
+          <circle cx="95%" cy="97%" r="2"   fill="#f5e6a3"/>
+          <circle cx="88%" cy="92%" r="1.4" fill="#c9a84c"/>
+          <circle cx="97%" cy="88%" r="1"   fill="#c9a84c"/>
+          <circle cx="82%" cy="95%" r=".8"  fill="#e8d080"/>
+          <circle cx="92%" cy="84%" r="1.2" fill="#c9a84c"/>
         </g>
+        {/* Borde izquierdo y derecho — zona media, lejos del texto */}
         <g className="star-5">
-          <circle cx="55%"  cy="48%" r="1"   fill="#c9a84c" opacity=".5"/>
-          <circle cx="18%"  cy="85%" r=".9"  fill="#c9a84c" opacity=".5"/>
-          <circle cx="93%"  cy="40%" r="1.1" fill="#c9a84c" opacity=".5"/>
+          <circle cx="2%"  cy="38%" r="1.5" fill="#c9a84c"/>
+          <circle cx="4%"  cy="50%" r="1"   fill="#e8d080"/>
+          <circle cx="2%"  cy="62%" r="1.3" fill="#c9a84c"/>
+          <circle cx="98%" cy="38%" r="1.5" fill="#c9a84c"/>
+          <circle cx="96%" cy="50%" r="1"   fill="#e8d080"/>
+          <circle cx="98%" cy="62%" r="1.3" fill="#c9a84c"/>
+        </g>
+        {/* Extras dispersos en top/bottom center — lejos del bloque de texto */}
+        <g className="star-1">
+          <circle cx="35%" cy="2%"  r="1"   fill="#c9a84c"/>
+          <circle cx="50%" cy="1%"  r="1.5" fill="#f5e6a3"/>
+          <circle cx="65%" cy="2%"  r="1"   fill="#c9a84c"/>
+          <circle cx="35%" cy="98%" r="1"   fill="#c9a84c"/>
+          <circle cx="50%" cy="99%" r="1.5" fill="#f5e6a3"/>
+          <circle cx="65%" cy="98%" r="1"   fill="#c9a84c"/>
         </g>
       </svg>
 
@@ -278,48 +300,43 @@ export default function Ad() {
             </div>
           </div>
 
-          {/* Pills */}
-          <div className="ad-seq-4" style={{display:"flex",gap:8,flexWrap:"wrap",justifyContent:"center"}}>
-            {["Sin experiencia previa","IA incluida","Acceso hoy"].map((t,i)=>(
+          {/* Grid de inclusions */}
+          <div className="ad-seq-4" style={{
+            display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, width:"100%", maxWidth:320,
+          }}>
+            {[
+              { title:"Plataforma interactiva", sub:"31 lecciones + 78 cartas" },
+              { title:"Oráculo IA 24/7",        sub:"Asistente especializado" },
+              { title:"Ebook Negocio del Tarot", sub:"Gana tus primeros $500" },
+              { title:"Ebook 78 Cartas",         sub:"Referencia completa PDF" },
+            ].map((item,i)=>(
+              <div key={i} style={{
+                padding:"8px 10px",
+                border:"1px solid rgba(201,168,76,.25)",
+                borderRadius:8,
+                background:"rgba(201,168,76,.05)",
+                display:"flex", flexDirection:"column", gap:2, textAlign:"left",
+              }}>
+                <div style={{fontSize:11,fontWeight:600,color:"#f5e6a3",lineHeight:1.3}}>{item.title}</div>
+                <div style={{fontSize:9,color:"rgba(201,168,76,.65)",letterSpacing:.3}}>{item.sub}</div>
+              </div>
+            ))}
+          </div>
+
+          <div className="ad-seq-5" style={{display:"flex",gap:8,justifyContent:"center"}}>
+            {["Sin experiencia previa","Acceso inmediato"].map((t,i)=>(
               <div key={i} style={{
                 padding:"5px 14px",
                 border:"1px solid rgba(201,168,76,.4)",
                 borderRadius:20,
                 fontSize:10,
-                letterSpacing:2,
+                letterSpacing:1.5,
                 textTransform:"uppercase",
                 color:"rgba(201,168,76,.85)",
                 background:"rgba(201,168,76,.06)",
               }}>{t}</div>
             ))}
           </div>
-
-          {/* CTA */}
-          <button
-            className="ad-seq-5 ad-cta"
-            onClick={() => window.location.href = "https://pay.hotmart.com/X105246915J"}
-            style={{
-              marginTop:2,
-              padding:"14px 52px",
-              borderRadius:5,
-              border:"1px solid #c9a84c",
-              background:"linear-gradient(135deg,rgba(201,168,76,.22),rgba(201,168,76,.08))",
-              color:"#f5e6a3",
-              fontSize:13,
-              fontFamily:"Georgia,serif",
-              letterSpacing:4,
-              textTransform:"uppercase",
-              cursor:"pointer",
-            }}
-            onMouseEnter={e=>{
-              (e.currentTarget as HTMLButtonElement).style.background="linear-gradient(135deg,rgba(201,168,76,.38),rgba(201,168,76,.16))";
-            }}
-            onMouseLeave={e=>{
-              (e.currentTarget as HTMLButtonElement).style.background="linear-gradient(135deg,rgba(201,168,76,.22),rgba(201,168,76,.08))";
-            }}
-          >
-            Empezar ahora →
-          </button>
         </div>
 
         {/* Footer */}

@@ -4,7 +4,7 @@ import { COURSE } from "./data/course";
 import { sf } from "./constants";
 import { supabase } from "./lib/supabase";
 import Landing from "./components/Landing";
-import Landing2 from "./components/Landing2";
+import LandingHome from "./components/creatives/landing_old";
 import Login from "./components/Login";
 import ForgotPassword from "./components/ForgotPassword";
 import ResetPassword from "./components/ResetPassword";
@@ -18,6 +18,10 @@ import Admin from "./components/Admin";
 import Profile from "./components/Profile";
 import Ad from "./components/creatives/Ad";
 import AdCards from "./components/creatives/AdCards";
+import Hub from "./components/Hub";
+import LecturaLanding from "./components/LecturaLanding";
+import LecturaApp from "./components/LecturaApp";
+import LecturaGracias from "./components/LecturaGracias";
 
 function CoursePage() {
   const navigate = useNavigate();
@@ -213,7 +217,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={<RootRedirect />} />
-      <Route path="/landing2" element={<Landing2 />} />
+      <Route path="/landing2" element={<LandingHome />} />
       <Route path="/login" element={<Login />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
@@ -223,6 +227,10 @@ export default function App() {
       <Route path="/perfil" element={<Profile />} />
       <Route path="/ad" element={<Ad />} />
       <Route path="/ad-cards" element={<AdCards />} />
+      <Route path="/hub" element={<Hub />} />
+      <Route path="/lectura" element={<LecturaLanding />} />
+      <Route path="/lectura/app" element={<LecturaApp />} />
+      <Route path="/lectura/gracias" element={<LecturaGracias />} />
     </Routes>
   );
 }

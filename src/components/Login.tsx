@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "../lib/supabase";
+import { supabase, getPostLoginRoute } from "../lib/supabase";
 
 function parseUA(ua: string) {
   const mob = /Mobile|Android|iPhone|iPod/.test(ua);
@@ -59,8 +59,9 @@ export default function Login() {
       return;
     }
     void logSession(data.user.id);
+    const route = await getPostLoginRoute(data.user.id);
     setLoading(false);
-    navigate("/curso");
+    navigate(route);
   };
 
   return (

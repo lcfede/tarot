@@ -218,6 +218,7 @@ export default function App() {
     <Routes>
       <Route path="/" element={<RootRedirect />} />
       <Route path="/landing2" element={<LandingHome />} />
+
       <Route path="/login" element={<Login />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />

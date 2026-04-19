@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "../lib/supabase";
+import { supabase, getPostLoginRoute } from "../lib/supabase";
 
 export default function ResetPassword() {
   const navigate = useNavigate();
@@ -49,14 +49,16 @@ export default function ResetPassword() {
       return;
     }
     setLoading(true);
-    const { error } = await supabase.auth.updateUser({ password });
+    const { error, data } = await supabase.auth.updateUser({ password });
     setLoading(false);
     if (error) {
       setError("No se pudo actualizar la contraseña. Solicitá un nuevo link.");
     } else {
       sessionStorage.removeItem("vt_auth_type");
       setDone(true);
-      setTimeout(() => navigate("/curso"), 2500);
+      const userId = data?.user?.id;
+      const route = userId ? await getPostLoginRoute(userId) : "/hub";
+      setTimeout(() => navigate(route), 2500);
     }
   };
 
@@ -86,7 +88,7 @@ export default function ResetPassword() {
           <div style={{ textAlign: "center" }}>
             <div style={{ fontSize: 28, marginBottom: 16, color: "#c9a84c" }}>✦</div>
             <p style={{ color: "#e8dcc8", fontSize: 14, lineHeight: 1.7, fontStyle: "italic" }}>
-              {isInvite ? "Contraseña creada. Redirigiendo al curso..." : "Contraseña actualizada. Redirigiendo al curso..."}
+              {isInvite ? "Contraseña creada. Redirigiendo..." : "Contraseña actualizada. Redirigiendo..."}
             </p>
           </div>
         ) : !ready ? (
@@ -151,6 +153,13 @@ export default function ResetPassword() {
             >
               {loading ? "Guardando..." : "Guardar contraseña"}
             </button>
+            <p style={{ fontSize: 11, color: "rgba(201,168,76,0.38)", textAlign: "center", marginTop: 4, lineHeight: 1.6, fontFamily: "Georgia,serif" }}>
+              Al ingresar aceptás los{" "}
+              <a href="/terminos" style={{ color: "rgba(201,168,76,0.55)", textDecoration: "underline" }}>Términos de uso</a>
+              {" "}y la{" "}
+              <a href="/privacidad" style={{ color: "rgba(201,168,76,0.55)", textDecoration: "underline" }}>Política de privacidad</a>.
+              {" "}Este servicio es exclusivo para mayores de 18 años.
+            </p>
           </form>
         )}
       </div>

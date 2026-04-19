@@ -10,20 +10,36 @@ const bg = "#07050f";
 export default function Hub() {
   const navigate = useNavigate();
   const [authed, setAuthed] = useState<boolean | null>(null);
+  const [hasCourse, setHasCourse] = useState(false);
+  const [hasReadings, setHasReadings] = useState(false);
   const [readingsCount, setReadingsCount] = useState<number>(0);
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session) { navigate("/login"); return; }
-      setAuthed(true);
-      const { data } = await supabase
-        .from("reading_packs")
-        .select("sessions_total, sessions_used")
-        .eq("user_id", session.user.id);
-      if (data) {
-        const total = data.reduce((s, r) => s + (r.sessions_total - r.sessions_used), 0);
+
+      const [productsRes, packsRes] = await Promise.all([
+        supabase.from("user_products").select("product").eq("user_id", session.user.id),
+        supabase.from("reading_packs").select("sessions_total, sessions_used").eq("user_id", session.user.id),
+      ]);
+
+      const products = (productsRes.data ?? []).map((r: { product: string }) => r.product);
+      const course = products.includes("course");
+      const readings = products.includes("readings");
+
+      if (packsRes.data) {
+        const total = packsRes.data.reduce((s, r) => s + (r.sessions_total - r.sessions_used), 0);
         setReadingsCount(total);
       }
+
+      // Si solo tiene un producto, redirigir directo
+      if (course && !readings) { navigate("/curso"); return; }
+      if (readings && !course) { navigate("/lectura/app"); return; }
+      if (!course && !readings) { navigate("/"); return; }
+
+      setHasCourse(course);
+      setHasReadings(readings);
+      setAuthed(true);
     });
   }, [navigate]);
 
@@ -78,7 +94,7 @@ export default function Hub() {
         opacity: 0,
       }}>
         {/* Curso */}
-        <button
+        {hasCourse && <button
           className="hub-card hub-card-btn"
           onClick={() => navigate("/curso")}
           style={{
@@ -116,10 +132,10 @@ export default function Hub() {
           }}>
             Ingresar →
           </div>
-        </button>
+        </button>}
 
         {/* Lecturas */}
-        <button
+        {hasReadings && <button
           className="hub-card hub-card-btn"
           onClick={() => navigate("/lectura/app")}
           style={{
@@ -159,7 +175,7 @@ export default function Hub() {
               ? `${readingsCount} tirada${readingsCount !== 1 ? "s" : ""} disponible${readingsCount !== 1 ? "s" : ""}`
               : "Ver lecturas"} →
           </div>
-        </button>
+        </button>}
       </div>
 
       {/* Footer */}

@@ -161,7 +161,15 @@ export default function Login() {
           </button>
         </form>
 
-        <div style={{ textAlign: "center", marginTop: 24, display: "flex", flexDirection: "column", gap: 10 }}>
+        <p style={{ fontSize: 11, color: "rgba(201,168,76,0.38)", textAlign: "center", marginTop: 12, lineHeight: 1.6, fontFamily: "Georgia,serif" }}>
+          Al ingresar aceptás los{" "}
+          <a href="/terminos" style={{ color: "rgba(201,168,76,0.55)", textDecoration: "underline" }}>Términos de uso</a>
+          {" "}y la{" "}
+          <a href="/privacidad" style={{ color: "rgba(201,168,76,0.55)", textDecoration: "underline" }}>Política de privacidad</a>.
+          {" "}Este servicio es exclusivo para mayores de 18 años.
+        </p>
+
+        <div style={{ textAlign: "center", marginTop: 16, display: "flex", flexDirection: "column", gap: 10 }}>
           <button
             onClick={() => navigate("/forgot-password")}
             style={{ background: "none", border: "none", color: "rgba(201,168,76,0.8)", fontSize: 12, cursor: "pointer", fontFamily: "Georgia,serif", letterSpacing: 1 }}

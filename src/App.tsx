@@ -22,6 +22,8 @@ import Hub from "./components/Hub";
 import LecturaLanding from "./components/LecturaLanding";
 import LecturaApp from "./components/LecturaApp";
 import LecturaGracias from "./components/LecturaGracias";
+import Terminos from "./components/Terminos";
+import Privacidad from "./components/Privacidad";
 
 function CoursePage() {
   const navigate = useNavigate();
@@ -223,7 +225,7 @@ export default function App() {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/curso" element={<CoursePage />} />
-      <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+      <Route path="/admin" element={<Navigate to="/admin/cursos" replace />} />
       <Route path="/admin/*" element={<Admin />} />
       <Route path="/perfil" element={<Profile />} />
       <Route path="/ad" element={<Ad />} />
@@ -232,6 +234,8 @@ export default function App() {
       <Route path="/lectura" element={<LecturaLanding />} />
       <Route path="/lectura/app" element={<LecturaApp />} />
       <Route path="/lectura/gracias" element={<LecturaGracias />} />
+      <Route path="/terminos" element={<Terminos />} />
+      <Route path="/privacidad" element={<Privacidad />} />
     </Routes>
   );
 }

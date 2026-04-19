@@ -297,6 +297,13 @@ function PacksDashboard({ userId, onStart }: { userId: string; onStart: (packId:
           >
             Tirar las cartas ✦
           </button>
+          <p style={{ fontSize: 11, color: "rgba(232,220,200,0.28)", textAlign: "center", margin: "14px 0 0", lineHeight: 1.55 }}>
+            Luna es una experiencia de tarot. No reemplaza la atención psicológica profesional. Solo para mayores de 18 años.{" "}
+            Al usar este servicio aceptás los{" "}
+            <a href="/terminos" target="_blank" rel="noopener noreferrer" style={{ color: "rgba(201,168,76,0.45)", textDecoration: "underline" }}>Términos de uso</a>
+            {" "}y la{" "}
+            <a href="/privacidad" target="_blank" rel="noopener noreferrer" style={{ color: "rgba(201,168,76,0.45)", textDecoration: "underline" }}>Política de privacidad</a>.
+          </p>
         </div>
       )}
 

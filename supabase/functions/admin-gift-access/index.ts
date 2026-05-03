@@ -3,6 +3,29 @@ const CORS = {
   "Access-Control-Allow-Headers": "authorization, content-type",
 };
 
+const EBOOK_URLS = [
+  { url: "https://visiontarot.com/downloads/curso-completo-tarot.pdf", filename: "curso-completo-tarot.pdf" },
+  { url: "https://visiontarot.com/downloads/negocio-del-tarot.pdf", filename: "negocio-del-tarot.pdf" },
+];
+
+async function fetchPdfAsBase64(url: string): Promise<string | null> {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) {
+      console.error(`Failed to fetch PDF ${url}: ${res.status}`);
+      return null;
+    }
+    const buffer = await res.arrayBuffer();
+    const bytes = new Uint8Array(buffer);
+    let binary = "";
+    for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
+    return btoa(binary);
+  } catch (e) {
+    console.error(`Error fetching PDF ${url}:`, e);
+    return null;
+  }
+}
+
 const PACK_DESCRIPTIONS: Record<number, string> = {
   1: "1 lectura · 10 preguntas con Luna",
   3: "3 lecturas · 10 preguntas con Luna (cada una)",
@@ -25,8 +48,9 @@ function buildGiftEmailHtml(opts: {
   actionLink: string | null;
   product: "course" | "readings" | "both";
   packType?: number;
+  ebooksAttached?: boolean;
 }): string {
-  const { isNewUser, actionLink, product, packType } = opts;
+  const { isNewUser, actionLink, product, packType, ebooksAttached } = opts;
 
   const ctaUrl = isNewUser && actionLink ? actionLink : "https://visiontarot.com/login";
   const ctaText = isNewUser ? "Crear mi contraseña y acceder" : "Ir a mi cuenta";
@@ -123,6 +147,17 @@ function buildGiftEmailHtml(opts: {
           ${itemsHtml}
         </table>
       </div>
+
+      ${ebooksAttached ? `
+      <div style="background:linear-gradient(135deg,#f0f4ff,#eef2ff);border:1px solid #c7d2fe;border-radius:8px;padding:24px 28px;margin-bottom:12px;">
+        <div style="font-size:10px;color:#6366f1;letter-spacing:4px;text-transform:uppercase;margin-bottom:16px;">&#128218; Ebooks adjuntos en este correo</div>
+        <table style="width:100%;border-collapse:collapse;">
+          <tr><td style="padding:5px 0;font-size:14px;color:#374151;">&#10022; &nbsp;Curso Completo de Tarot Rider-Waite (PDF)</td></tr>
+          <tr><td style="padding:5px 0;font-size:14px;color:#374151;">&#10022; &nbsp;El Negocio del Tarot (PDF)</td></tr>
+        </table>
+        <p style="font-size:12px;color:#6b7280;margin:14px 0 0;line-height:1.5;">Encontrás los dos ebooks adjuntos a este correo. También podés descargarlos en cualquier momento desde tu cuenta.</p>
+      </div>
+      ` : ""}
     </div>
 
     <div style="padding:20px 40px;background:#fafafa;border-top:1px solid #f1f5f9;text-align:center;">
@@ -145,19 +180,42 @@ async function sendGiftEmail(
   else if (opts.product === "readings") subject = "¡Te regalaron lecturas de Tarot con Luna! 🔮";
   else subject = "¡Te regalaron el Curso + Lecturas de Tarot! 🔮";
 
-  const html = buildGiftEmailHtml(opts);
+  const includeEbooks = opts.product === "course" || opts.product === "both";
+
+  let attachments: { filename: string; content: string }[] = [];
+  if (includeEbooks) {
+    const results = await Promise.all(
+      EBOOK_URLS.map(async ({ url, filename }) => {
+        const content = await fetchPdfAsBase64(url);
+        return content ? { filename, content } : null;
+      })
+    );
+    attachments = results.filter((a): a is { filename: string; content: string } => a !== null);
+    console.log(`Ebooks fetched: ${attachments.length}/${EBOOK_URLS.length}`);
+  }
+
+  const html = buildGiftEmailHtml({ ...opts, ebooksAttached: attachments.length > 0 });
+
   try {
+    const body: Record<string, unknown> = {
+      from: "Visión Tarot <hola@visiontarot.com>",
+      to: [email],
+      subject,
+      html,
+    };
+    if (attachments.length > 0) body.attachments = attachments;
+
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { "Authorization": `Bearer ${resendKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: "Visión Tarot <hola@visiontarot.com>", to: [email], subject, html }),
+      body: JSON.stringify(body),
     });
     if (!res.ok) {
       const errText = await res.text();
       console.error("Resend error:", res.status, errText);
       return { ok: false, error: `Resend ${res.status}: ${errText}` };
     }
-    console.log(`Gift email sent to ${email} (product: ${opts.product})`);
+    console.log(`Gift email sent to ${email} (product: ${opts.product}, attachments: ${attachments.length})`);
     return { ok: true };
   } catch (e) {
     console.error("Failed to send gift email:", e);

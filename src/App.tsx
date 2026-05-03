@@ -18,6 +18,7 @@ import Admin from "./components/Admin";
 import Profile from "./components/Profile";
 import Ad from "./components/creatives/Ad";
 import AdCards from "./components/creatives/AdCards";
+import SorteoReel from "./components/creatives/SorteoReel";
 import Hub from "./components/Hub";
 import LecturaLanding from "./components/LecturaLanding";
 import LecturaApp from "./components/LecturaApp";
@@ -230,6 +231,7 @@ export default function App() {
       <Route path="/perfil" element={<Profile />} />
       <Route path="/ad" element={<Ad />} />
       <Route path="/ad-cards" element={<AdCards />} />
+      <Route path="/creatives/sorteo-reel" element={<SorteoReel />} />
       <Route path="/hub" element={<Hub />} />
       <Route path="/lectura" element={<LecturaLanding />} />
       <Route path="/lectura/app" element={<LecturaApp />} />

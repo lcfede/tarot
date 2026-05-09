@@ -1,7 +1,17 @@
 {
   "permissions": {
     "allow": [
-      "Bash(python3 -c ':*)"
+      "Bash(python3 -c ':*)",
+      "Bash(rsync -avz --delete -e \"ssh -o StrictHostKeyChecking=no\" ./dist/ root@76.13.45.84:/root/tarot/dist/)",
+      "Bash(ssh -o StrictHostKeyChecking=no root@76.13.45.84 \"docker ps --format 'table {{.Names}}\\\\t{{.Status}}'\")",
+      "Bash(ssh -o StrictHostKeyChecking=no root@76.13.45.84 \"docker ps -a --format 'table {{.Names}}\\\\t{{.Status}}\\\\t{{.Image}}'\")",
+      "Bash(ssh -o StrictHostKeyChecking=no root@76.13.45.84 \"ls -la /root/tarot/dist/ && echo '---' && nginx -v 2>&1 && echo '---' && ps aux | grep nginx | grep -v grep\")",
+      "Bash(ssh -o StrictHostKeyChecking=no root@76.13.45.84 \"cat /etc/nginx/sites-enabled/*.conf 2>/dev/null || cat /etc/nginx/conf.d/*.conf 2>/dev/null || cat /etc/nginx/sites-enabled/default 2>/dev/null\")",
+      "Bash(ssh -o StrictHostKeyChecking=no root@76.13.45.84 \"ls /etc/nginx/sites-enabled/ && echo '---' && ls /etc/nginx/conf.d/\")",
+      "Bash(ssh -o StrictHostKeyChecking=no root@76.13.45.84 \"cat /etc/nginx/sites-enabled/visiontarot.com\")",
+      "Bash(ssh -o StrictHostKeyChecking=no root@76.13.45.84 \"ls -la /root/tarot/ && echo '---' && ls -la /root/tarot/assets/ 2>/dev/null | head -10\")",
+      "Bash(rsync -avz --delete --exclude='nginx.conf' --exclude='dist/' -e \"ssh -o StrictHostKeyChecking=no\" ./dist/ root@76.13.45.84:/root/tarot/)",
+      "Bash(ssh -o StrictHostKeyChecking=no root@76.13.45.84 \"ls -la /root/tarot/assets/ && echo '---' && cat /root/tarot/nginx.conf | head -5\")"
     ]
   }
 }

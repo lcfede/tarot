@@ -373,6 +373,28 @@ function CardReveal({ cards, onAllRevealed, onBack }: { cards: CardInSpread[]; o
 
   return (
     <div style={{ maxWidth: 680, margin: "0 auto", padding: "28px 16px" }}>
+      <style>{`
+        .flip-inner {
+          position: relative;
+          width: 100%;
+          height: 100%;
+          transform-style: preserve-3d;
+          -webkit-transform-style: preserve-3d;
+          will-change: transform;
+          transition: transform 0.52s cubic-bezier(0.45, 0.05, 0.55, 0.95);
+        }
+        .flip-inner.flipped { transform: rotateY(180deg); }
+        .flip-face {
+          position: absolute;
+          inset: 0;
+          border-radius: 8px;
+          backface-visibility: hidden;
+          -webkit-backface-visibility: hidden;
+          overflow: hidden;
+        }
+        .flip-face-back { transform: rotateY(180deg); }
+      `}</style>
+
       <div style={{ textAlign: "center", marginBottom: 24 }}>
         <h2 style={{ fontFamily: hf, fontSize: 28, color: "#f5e6a3", margin: "0 0 8px" }}>
           Tus cartas están listas
@@ -412,17 +434,55 @@ function CardReveal({ cards, onAllRevealed, onBack }: { cards: CardInSpread[]; o
               <div style={{ fontSize: 10, color: "rgba(201,168,76,0.65)", letterSpacing: 0.5, textTransform: "uppercase", maxWidth: cardW, lineHeight: 1.2, minHeight: 24, display: "flex", alignItems: "center", justifyContent: "center" }}>
                 {entry.position}
               </div>
-              {/* Carta */}
-              <div style={{
-                transform: isSelected ? "scale(1.06)" : "scale(1)",
-                transition: "transform 0.2s",
-                filter: isRevealed ? "none" : "brightness(0.55)",
-              }}>
-                {isRevealed ? (
-                  <CardImg c={entry.card} w={cardW} h={cardH} onClick={() => reveal(i)} glow={isSelected} flip={false} />
-                ) : (
-                  <CardImg c={entry.card} w={cardW} h={cardH} onClick={() => reveal(i)} flip glow={false} />
-                )}
+              {/* Carta con flip 3D */}
+              <div
+                onClick={() => reveal(i)}
+                style={{
+                  width: cardW,
+                  height: cardH,
+                  perspective: "700px",
+                  cursor: "pointer",
+                  transform: isSelected ? "scale(1.06)" : "scale(1)",
+                  transition: "transform 0.2s ease",
+                  flexShrink: 0,
+                }}
+              >
+                <div className={`flip-inner${isRevealed ? " flipped" : ""}`}>
+                  {/* Dorso (visible antes de revelar) */}
+                  <div
+                    className="flip-face"
+                    style={{
+                      background: "linear-gradient(145deg,#1a0a2e,#2d1b4e)",
+                      border: "2px solid #d4a843",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <span style={{ fontSize: cardW * 0.22, color: "#d4a843", opacity: 0.5 }}>✦</span>
+                  </div>
+                  {/* Frente — imagen de la carta (visible tras el flip) */}
+                  <div
+                    className="flip-face flip-face-back"
+                    style={{
+                      border: `2px solid ${isSelected ? "rgba(201,168,76,0.7)" : entry.card.cl + "55"}`,
+                      boxShadow: isSelected ? "0 0 14px rgba(201,168,76,0.3)" : "0 2px 8px rgba(0,0,0,0.4)",
+                      background: "#0a0a15",
+                    }}
+                  >
+                    <img
+                      src={entry.card.im}
+                      alt={entry.card.nm}
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                        transform: entry.reversed ? "rotate(180deg)" : undefined,
+                      }}
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                    />
+                  </div>
+                </div>
               </div>
               {/* Nombre — solo cuando está revelada */}
               <div style={{ fontSize: 11, color: isRevealed ? "#e8dcc8" : "transparent", maxWidth: cardW, lineHeight: 1.3, minHeight: 28 }}>
@@ -506,7 +566,7 @@ function validateInput(text: string): string | null {
 function TarotChat({ session, onSessionEnd }: { session: Session; onSessionEnd: () => void }) {
   const [messages, setMessages] = useState<ChatMessage[]>([{
     r: "a",
-    t: `Hola, soy Luna. Tus cartas ya están sobre la mesa.\n\n${session.cards_json.map((c, i) => `**${i + 1}. ${c.name}**${c.reversed ? " (invertida)" : ""} — ${c.position}`).join("\n")}\n\nPreguntame lo que quieras saber sobre esta lectura. 🌙`,
+    t: `Hola, soy Luna. 🌙\n\nAntes de ver lo que dicen las cartas, quiero conocer un poco tu situación. ¿Hay algún área de tu vida sobre la que quieras reflexionar hoy? Puede ser amor, trabajo, familia, una decisión que estás atravesando, o simplemente cómo te sentís en general.`,
   }]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -630,11 +690,11 @@ function TarotChat({ session, onSessionEnd }: { session: Session; onSessionEnd: 
             background: "rgba(201,168,76,0.07)",
             border: "1px solid rgba(201,168,76,0.2)",
             fontSize: 12,
-            color: questionsLeft <= 2 && !readingFinished ? "#e07070" : gold,
+            color: questionsLeft <= 1 && !readingFinished ? "#e07070" : gold,
             fontFamily: sf,
             fontWeight: 600,
           }}>
-            {readingFinished ? "Finalizada ✦" : `${questionsLeft} ${questionsLeft === 1 ? "pregunta" : "preguntas"}`}
+            {readingFinished ? "Finalizada ✦" : `${questionsLeft} ${questionsLeft === 1 ? "mensaje" : "mensajes"}`}
           </div>
           {!readingFinished && (
             <button
@@ -699,7 +759,7 @@ function TarotChat({ session, onSessionEnd }: { session: Session; onSessionEnd: 
                 boxShadow: selectedCard === i ? "0 0 12px rgba(201,168,76,0.25)" : "none",
                 transition: "all 0.15s",
               }}>
-                <CardImg c={entry.card} w={52} h={84} />
+                <CardImg c={entry.card} w={52} h={84} reversed={entry.reversed} />
               </div>
               <div style={{ fontSize: 9, color: "rgba(201,168,76,0.55)", textTransform: "uppercase", letterSpacing: 0.5, maxWidth: 56, lineHeight: 1.2, textAlign: "center" }}>
                 {entry.position}
@@ -723,7 +783,7 @@ function TarotChat({ session, onSessionEnd }: { session: Session; onSessionEnd: 
               gap: 12,
               alignItems: "flex-start",
             }}>
-              <CardImg c={session.cards_json[selectedCard].card} w={42} h={68} />
+              <CardImg c={session.cards_json[selectedCard].card} w={42} h={68} reversed={session.cards_json[selectedCard].reversed} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontFamily: hf, fontSize: 16, color: "#f5e6a3", marginBottom: 2 }}>
                   {session.cards_json[selectedCard].name}
@@ -959,7 +1019,7 @@ function TarotChat({ session, onSessionEnd }: { session: Session; onSessionEnd: 
               value={input}
               onChange={(e) => { setInput(e.target.value); if (inputError) setInputError(null); }}
               onKeyDown={handleKey}
-              placeholder="Preguntale a Luna sobre tus cartas..."
+              placeholder="Escribile a Luna..."
               rows={1}
               style={{
                 flex: 1,
@@ -1044,7 +1104,7 @@ export default function LecturaApp() {
         pack_id: pendingPack,
         spread_key: pendingSpread,
         cards_json: cardsJson,
-        questions_total: 10,
+        questions_total: 6,
         questions_used: 0,
         status: "active",
       })

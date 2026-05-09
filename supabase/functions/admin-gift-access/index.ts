@@ -27,12 +27,12 @@ async function fetchPdfAsBase64(url: string): Promise<string | null> {
 }
 
 const PACK_DESCRIPTIONS: Record<number, string> = {
-  1: "1 lectura · 10 preguntas con Luna",
-  3: "3 lecturas · 10 preguntas con Luna (cada una)",
-  6: "6 lecturas · 12 preguntas con Luna (cada una)",
+  1: "1 lectura completa con Luna",
+  3: "3 lecturas completas con Luna",
+  6: "6 lecturas completas con Luna",
 };
 
-const PACK_QUESTIONS: Record<number, number> = { 1: 10, 3: 10, 6: 12 };
+const PACK_QUESTIONS: Record<number, number> = { 1: 6, 3: 6, 6: 6 };
 
 function getUserIdFromJwt(token: string): string | null {
   try {
@@ -74,7 +74,8 @@ function buildGiftEmailHtml(opts: {
     giftDesc = "Alguien especial te regaló una experiencia de tarot personalizada con Luna, tu tarotista de IA.";
     includeItems = [
       packDesc,
-      "Luna, tu tarotista personal",
+      "Lectura narrativa guiada y personalizada",
+      "Diálogo post-lectura con Luna",
       "Cartas del mazo Rider-Waite",
       "Sin vencimiento",
     ];
@@ -85,7 +86,8 @@ function buildGiftEmailHtml(opts: {
     includeItems = [
       "Curso completo de Tarot Rider-Waite",
       packDesc,
-      "Luna, tu tarotista personal",
+      "Lectura narrativa guiada y personalizada",
+      "Diálogo post-lectura con Luna",
       "Oráculo de consultas ilimitado",
       "Certificado al completar el curso",
     ];

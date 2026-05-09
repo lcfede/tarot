@@ -7,9 +7,10 @@ interface Props {
   onClick?: () => void;
   flip?: boolean;
   glow?: boolean;
+  reversed?: boolean;
 }
 
-export default function CardImg({ c, w = 100, h = 164, onClick, flip, glow }: Props) {
+export default function CardImg({ c, w = 100, h = 164, onClick, flip, glow, reversed }: Props) {
   if (flip) {
     return (
       <div
@@ -38,6 +39,8 @@ export default function CardImg({ c, w = 100, h = 164, onClick, flip, glow }: Pr
         border: "2px solid " + c.cl + "55",
         boxShadow: glow ? "0 0 15px " + c.cl + "44" : "0 2px 8px rgba(0,0,0,0.4)",
         background: "#0a0a15",
+        transform: reversed ? "rotate(180deg)" : undefined,
+        transition: "transform 0.3s ease",
       }}
     >
       <img

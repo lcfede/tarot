@@ -51,14 +51,13 @@ function GoldBtn({ label, sub, onClick }: { label: string; sub?: string; onClick
 interface PackCardProps {
   title: string;
   sessions: number;
-  questions: number;
   price: string;
   priceNote?: string;
   highlight?: boolean;
   packKey: keyof typeof PACK_URLS;
 }
 
-function PackCard({ title, sessions, questions, price, priceNote, highlight, packKey }: PackCardProps) {
+function PackCard({ title, sessions, price, priceNote, highlight, packKey }: PackCardProps) {
   return (
     <div style={{
       flex: "1 1 240px",
@@ -100,8 +99,9 @@ function PackCard({ title, sessions, questions, price, priceNote, highlight, pac
 
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         {[
-          `${sessions} lectura${sessions > 1 ? "s" : ""} de tarot`,
-          `${questions} preguntas por lectura`,
+          `${sessions} lectura${sessions > 1 ? "s" : ""} completa${sessions > 1 ? "s" : ""}`,
+          "Lectura narrativa personalizada",
+          "Diálogo post-lectura incluido",
           "Luna, tu tarotista personal",
           "Cartas del mazo Rider-Waite",
           "Acceso inmediato",
@@ -185,13 +185,13 @@ export default function LecturaLanding() {
           lineHeight: 1.2,
           letterSpacing: 1,
         }}>
-          Tu lectura de tarot personalizada con Luna
+          Una lectura de tarot completa, guiada por Luna
         </h1>
         <p style={{ fontSize: 17, color: textMuted, lineHeight: 1.7, margin: "0 0 32px" }}>
-          Tirá las cartas, recibí una interpretación profunda y preguntá todo lo que necesitás saber. Luna te acompaña en cada lectura.
+          Luna te pregunta sobre tu situación, revela las cartas y hace una lectura narrativa profunda — como si estuvieras sentada frente a una tarotista de verdad. Después podés conversar sobre lo que surgió.
         </p>
         <div style={{ display: "flex", gap: 6, justifyContent: "center", flexWrap: "wrap" }}>
-          {["78 cartas Rider-Waite", "Luna, tu tarotista", "Respuestas al instante"].map((tag, i) => (
+          {["Lectura narrativa completa", "Guiada por Luna", "Cartas Rider-Waite"].map((tag, i) => (
             <span key={i} style={{
               padding: "5px 14px",
               borderRadius: 20,
@@ -221,9 +221,10 @@ export default function LecturaLanding() {
         </h2>
         <div style={{ display: "flex", gap: 16, flexWrap: "wrap", justifyContent: "center" }}>
           {[
-            { n: "1", title: "Comprá un pack", desc: "Elegí cuántas lecturas querés" },
-            { n: "2", title: "Tirá las cartas", desc: "Elegí un spread y revelá cada carta" },
-            { n: "3", title: "Consultá a Luna", desc: "Luna lee tus cartas y responde tus preguntas" },
+            { n: "1", title: "Comprá un pack", desc: "Elegí cuántas lecturas querés, sin suscripción" },
+            { n: "2", title: "Revelá tus cartas", desc: "Elegí el tipo de tirada y destapá cada carta una a una" },
+            { n: "3", title: "Luna te conoce", desc: "Antes de leer, Luna te hace 2 preguntas para entender tu situación" },
+            { n: "4", title: "Tu lectura completa", desc: "Luna interpreta las cartas en narrativa y conversás sobre lo que surgió" },
           ].map((step) => (
             <div key={step.n} style={{
               flex: "1 1 180px",
@@ -271,7 +272,6 @@ export default function LecturaLanding() {
             packKey={1}
             title="Esencial"
             sessions={1}
-            questions={10}
             price="$5 USD"
             priceNote="pago único"
           />
@@ -279,7 +279,6 @@ export default function LecturaLanding() {
             packKey={3}
             title="Profunda"
             sessions={3}
-            questions={10}
             price="$12 USD"
             priceNote="pago único"
             highlight
@@ -288,7 +287,6 @@ export default function LecturaLanding() {
             packKey={6}
             title="Completa"
             sessions={6}
-            questions={12}
             price="$20 USD"
             priceNote="pago único"
           />

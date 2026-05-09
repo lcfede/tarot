@@ -6,9 +6,9 @@
 //   4. Envía email de bienvenida via Resend (nuevo usuario o recompra)
 
 const PACK_DESCRIPTIONS: Record<number, string> = {
-  1: "1 lectura · 10 preguntas con Luna",
-  3: "3 lecturas · 10 preguntas con Luna (cada una)",
-  6: "6 lecturas · 12 preguntas con Luna (cada una)",
+  1: "1 lectura completa con Luna",
+  3: "3 lecturas completas con Luna",
+  6: "6 lecturas completas con Luna",
 };
 
 async function logPurchaseError(
@@ -99,7 +99,8 @@ function buildEmailHtml(opts: {
         <div style="font-size:10px;color:#c9a84c;letter-spacing:4px;text-transform:uppercase;margin-bottom:16px;">Tu compra incluye</div>
         <table style="width:100%;border-collapse:collapse;">
           <tr><td style="padding:5px 0;font-size:14px;color:#374151;">&#10022; &nbsp;${packDesc}</td></tr>
-          <tr><td style="padding:5px 0;font-size:14px;color:#374151;">&#10022; &nbsp;Luna, tu tarotista personal</td></tr>
+          <tr><td style="padding:5px 0;font-size:14px;color:#374151;">&#10022; &nbsp;Lectura narrativa guiada y personalizada</td></tr>
+          <tr><td style="padding:5px 0;font-size:14px;color:#374151;">&#10022; &nbsp;Diálogo post-lectura con Luna</td></tr>
           <tr><td style="padding:5px 0;font-size:14px;color:#374151;">&#10022; &nbsp;Cartas del mazo Rider-Waite</td></tr>
           <tr><td style="padding:5px 0;font-size:14px;color:#374151;">&#10022; &nbsp;Sin vencimiento</td></tr>
         </table>

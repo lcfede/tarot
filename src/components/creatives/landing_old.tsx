@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 
-export default function Landing2() {
+export default function LandingHome() {
   const navigate = useNavigate();
   const onEnter = () => navigate("/curso");
   return (

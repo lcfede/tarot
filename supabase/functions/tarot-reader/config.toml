@@ -1,0 +1,2 @@
+[functions.tarot-reader]
+verify_jwt = false

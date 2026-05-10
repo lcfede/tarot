@@ -11,7 +11,9 @@
       "Bash(ssh -o StrictHostKeyChecking=no root@76.13.45.84 \"cat /etc/nginx/sites-enabled/visiontarot.com\")",
       "Bash(ssh -o StrictHostKeyChecking=no root@76.13.45.84 \"ls -la /root/tarot/ && echo '---' && ls -la /root/tarot/assets/ 2>/dev/null | head -10\")",
       "Bash(rsync -avz --delete --exclude='nginx.conf' --exclude='dist/' -e \"ssh -o StrictHostKeyChecking=no\" ./dist/ root@76.13.45.84:/root/tarot/)",
-      "Bash(ssh -o StrictHostKeyChecking=no root@76.13.45.84 \"ls -la /root/tarot/assets/ && echo '---' && cat /root/tarot/nginx.conf | head -5\")"
+      "Bash(ssh -o StrictHostKeyChecking=no root@76.13.45.84 \"ls -la /root/tarot/assets/ && echo '---' && cat /root/tarot/nginx.conf | head -5\")",
+      "Bash(scp /Users/federicolanzacastelli/Proyectos/ebooks/vision-tarot/tarot/public/inicio.html root@76.13.45.84:/root/tarot/public/inicio.html)",
+      "Bash(scp /Users/federicolanzacastelli/Proyectos/ebooks/vision-tarot/tarot/public/inicio.html root@76.13.45.84:/root/tarot/inicio.html)"
     ]
   }
 }

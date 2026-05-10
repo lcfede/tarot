@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-const PURCHASE_URL = "https://pay.hotmart.com/X105246915J";
+// const PURCHASE_URL = "https://pay.hotmart.com/X105246915J";
+const PURCHASE_URL = "https://pay.hotmart.com/X105246915J?off=o51mcb6k";
+
 
 // ── Tarot card decoration ──────────────────────────────────────────────────
 function CardDeco({ img, name, roman, rotate = 0, mt = 0, opacity = 1 }: {
